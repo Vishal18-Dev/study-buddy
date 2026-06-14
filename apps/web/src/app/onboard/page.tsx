@@ -85,7 +85,14 @@ export default function OnboardPage() {
 
   const advanceStep = useCallback(async (answer: string) => {
     const q = QUESTIONS[step];
-    if (!q) return;
+    if (!q) {
+      if (answer.toLowerCase().trim() === 'retry') {
+        addUser(answer);
+        setStep(QUESTIONS.length - 1);
+        setTimeout(() => addBot("Okay! To trigger the generation again, just type 'skip' or upload your syllabus again."), 400);
+      }
+      return;
+    }
 
     addUser(answer);
 
