@@ -36,6 +36,7 @@ export default function RootLayout({
             </ToastProvider>
           </AuthProvider>
         </ThemeProvider>
+        <Analytics />
       </body>
     </html>
   );
