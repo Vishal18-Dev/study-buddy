@@ -1,0 +1,28 @@
+{
+  "name": "studybuddy",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:api": "npm run dev --workspace=apps/api",
+    "dev:web": "npm run dev --workspace=apps/web",
+    "dev": "concurrently \"npm run dev:api\" \"npm run dev:web\"",
+    "build": "npm run build --workspaces",
+    "build:api": "npm run build --workspace=packages/shared && npm run build --workspace=apps/api",
+    "build:web": "npm run build --workspace=packages/shared && npm run build --workspace=apps/web",
+    "prisma:migrate": "npx prisma migrate dev --schema=./prisma/schema.prisma",
+    "prisma:deploy": "npx prisma migrate deploy --schema=./prisma/schema.prisma",
+    "prisma:generate": "npx prisma generate --schema=./prisma/schema.prisma",
+    "prisma:seed": "npx ts-node --project prisma/tsconfig.json prisma/seed.ts",
+    "prisma:studio": "npx prisma studio --schema=./prisma/schema.prisma"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "typescript": "^5.3.3",
+    "prettier": "^3.2.4",
+    "@types/node": "^20.11.5"
+  }
+}

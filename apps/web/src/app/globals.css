@@ -1,0 +1,221 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+@layer base {
+  :root {
+    /* Warm off-white background, deep navy primary */
+    --background: 36 33% 97%;
+    --foreground: 224 71% 12%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 224 71% 12%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 224 71% 12%;
+
+    /* Deep navy primary */
+    --primary: 224 71% 26%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Soft warm secondary */
+    --secondary: 36 20% 93%;
+    --secondary-foreground: 224 71% 20%;
+
+    --muted: 36 20% 93%;
+    --muted-foreground: 224 20% 46%;
+
+    /* Teal accent */
+    --accent: 174 72% 36%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84% 58%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 36 15% 88%;
+    --input: 0 0% 100%;
+    --ring: 224 71% 40%;
+    --radius: 0.625rem;
+
+    /* Semantic colours */
+    --success: 142 60% 38%;
+    --warning: 38 92% 50%;
+    --streak-orange: 24 100% 54%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+    scroll-behavior: smooth;
+    /* Always light — no dark mode */
+    color-scheme: light;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    background-color: hsl(36 33% 97%);
+    /* Subtle warm grain texture */
+    background-image:
+      radial-gradient(ellipse at 0% 0%, hsl(224 71% 26% / 0.04) 0%, transparent 60%),
+      radial-gradient(ellipse at 100% 100%, hsl(174 72% 36% / 0.04) 0%, transparent 60%);
+    background-attachment: fixed;
+  }
+
+  h1, h2, h3, h4 {
+    @apply font-semibold tracking-tight;
+  }
+}
+
+@layer utilities {
+  /* ── Cards ────────────────────────────────── */
+  .card-elevated {
+    background: white;
+    border: 1px solid hsl(36 15% 88%);
+    box-shadow: 0 1px 3px hsl(224 71% 12% / 0.06), 0 4px 12px hsl(224 71% 12% / 0.04);
+    border-radius: var(--radius);
+  }
+
+  .card-elevated:hover {
+    box-shadow: 0 2px 8px hsl(224 71% 12% / 0.1), 0 8px 24px hsl(224 71% 12% / 0.06);
+    transition: box-shadow 0.2s ease;
+  }
+
+  /* Legacy glass (used on sidebar) */
+  .glass {
+    background: hsl(0 0% 100% / 0.92);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid hsl(36 15% 88% / 0.8);
+  }
+
+  /* ── Gradient text ─────────────────────────── */
+  .gradient-text {
+    background: linear-gradient(135deg, hsl(224 71% 26%), hsl(224 71% 42%));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* ── Hero gradient banner ───────────────────── */
+  .hero-gradient {
+    background: linear-gradient(135deg, hsl(224 71% 26%) 0%, hsl(224 71% 34%) 60%, hsl(174 72% 30%) 100%);
+  }
+
+  /* ── Topic status pill ─────────────────────── */
+  .status-dot-complete { @apply inline-block h-2 w-2 rounded-full bg-emerald-500; }
+  .status-dot-progress { @apply inline-block h-2 w-2 rounded-full bg-amber-400; }
+  .status-dot-pending  { @apply inline-block h-2 w-2 rounded-full bg-slate-300; }
+
+  /* ── Streak ────────────────────────────────── */
+  .streak-glow {
+    filter: drop-shadow(0 0 6px hsl(24 100% 54% / 0.5));
+  }
+
+  @keyframes streakFlicker {
+    0%, 100% { filter: drop-shadow(0 0 5px hsl(24 100% 54% / 0.45)); }
+    50%       { filter: drop-shadow(0 0 12px hsl(24 100% 54% / 0.85)); }
+  }
+
+  .animate-streak {
+    animation: streakFlicker 1.8s ease-in-out infinite;
+  }
+
+  /* ── Glow border (CTA / active test card) ──── */
+  .border-glow {
+    border: 1px solid hsl(224 71% 50% / 0.35);
+    box-shadow: 0 0 0 3px hsl(224 71% 50% / 0.08);
+    transition: box-shadow 0.25s ease, border-color 0.25s ease;
+  }
+  .border-glow:hover {
+    border-color: hsl(224 71% 50% / 0.6);
+    box-shadow: 0 0 0 4px hsl(224 71% 50% / 0.12);
+  }
+
+  .quiz-unlock-glow {
+    border: 1.5px solid hsl(142 60% 38% / 0.5);
+    box-shadow: 0 0 16px hsl(142 60% 38% / 0.2);
+    animation: quizPulse 2.5s ease-in-out infinite;
+  }
+
+  @keyframes quizPulse {
+    0%, 100% { box-shadow: 0 0 12px hsl(142 60% 38% / 0.15); }
+    50%       { box-shadow: 0 0 28px hsl(142 60% 38% / 0.35); }
+  }
+
+  /* ── Chat bubbles ──────────────────────────── */
+  .bubble-bot {
+    background: hsl(36 20% 93%);
+    color: hsl(224 71% 12%);
+    border-radius: 1rem 1rem 1rem 0.25rem;
+    padding: 0.75rem 1rem;
+    border: 1px solid hsl(36 15% 88%);
+  }
+
+  .bubble-user {
+    background: hsl(224 71% 26%);
+    color: white;
+    border-radius: 1rem 1rem 0.25rem 1rem;
+    padding: 0.75rem 1rem;
+  }
+
+  /* ── Micro-animations ──────────────────────── */
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(-8px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes scaleIn {
+    from { opacity: 0; transform: scale(0.96); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+
+  .animate-fade-up  { animation: fadeInUp 0.35s ease-out forwards; }
+  .animate-slide-in { animation: slideIn  0.25s ease-out forwards; }
+  .animate-scale-in { animation: scaleIn  0.25s ease-out forwards; }
+
+  .stagger-children > * {
+    opacity: 0;
+    animation: fadeInUp 0.35s ease-out forwards;
+  }
+  .stagger-children > *:nth-child(1) { animation-delay: 0.04s; }
+  .stagger-children > *:nth-child(2) { animation-delay: 0.08s; }
+  .stagger-children > *:nth-child(3) { animation-delay: 0.12s; }
+  .stagger-children > *:nth-child(4) { animation-delay: 0.16s; }
+  .stagger-children > *:nth-child(5) { animation-delay: 0.20s; }
+  .stagger-children > *:nth-child(6) { animation-delay: 0.24s; }
+
+  /* ── Scrollbar ─────────────────────────────── */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(224 20% 78%);
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover { background: hsl(224 20% 60%); }
+
+  /* ── YouTube embed ─────────────────────────── */
+  .yt-container {
+    position: relative;
+    padding-bottom: 56.25%;
+    height: 0;
+    overflow: hidden;
+    border-radius: 0.75rem;
+  }
+  .yt-container iframe {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    border: none;
+    border-radius: 0.75rem;
+  }
+}

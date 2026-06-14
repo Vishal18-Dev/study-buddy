@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: studybuddy-api
+    env: node
+    buildCommand: npm install && npm run prisma:generate && npm run build:api
+    startCommand: npm run prisma:deploy && npm start --workspace=apps/api
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 4000
+      # The following must be set in the Render Dashboard:
+      # - DATABASE_URL
+      # - JWT_SECRET
+      # - GEMINI_API_KEY
+      # - REDIS_URL
+      # - CORS_ORIGINS (e.g. https://your-vercel-app.vercel.app)

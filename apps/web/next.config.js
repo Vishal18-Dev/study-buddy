@@ -1,0 +1,14 @@
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  experimental: {},
+  // Allow API requests to the Express backend during dev
+  async rewrites() {
+    return [];
+  },
+  // Environment variables available client-side
+  env: {
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000',
+  },
+};
+
+module.exports = nextConfig;
