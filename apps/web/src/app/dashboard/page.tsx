@@ -9,16 +9,12 @@ import {
 } from 'lucide-react';
 import { AppShell } from '@/components/layout/AppShell';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { get, post, patch } from '@/lib/fetcher';
 import { daysUntil, formatMins, cn } from '@/lib/utils';
 import type { DashboardData, Topic } from '@/lib/types';
 
-/** Generate a YouTube deep-link search URL for a topic title */
-function ytSearchUrl(title: string): string {
-  return `https://www.youtube.com/results?search_query=${encodeURIComponent(title + ' tutorial lesson')}`;
-}
+
 
 /** Simple inline video-link card shown under each topic */
 function VideoCard({ topicId, title }: { topicId: string; title: string }) {

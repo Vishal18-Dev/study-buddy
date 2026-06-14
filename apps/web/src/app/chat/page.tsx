@@ -3,8 +3,8 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import {
-  Send, Sparkles, Bot, User, Trash2, BookOpen, HelpCircle,
-  ChevronDown, RotateCcw, MessageSquare
+  Send, Sparkles, User, Trash2, HelpCircle,
+  MessageSquare
 } from 'lucide-react';
 import { AppShell } from '@/components/layout/AppShell';
 import { Button } from '@/components/ui/button';

@@ -1,7 +1,7 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenAI } from '@google/genai';
 import { LLMPlan, LLMQuiz, CreatePlanBody } from '@studybuddy/shared';
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
 
 async function generateTextWithFallback(
   prompt: string,
@@ -20,9 +20,14 @@ async function generateTextWithFallback(
     for (const modelName of modelsToTry) {
       try {
         console.log(`⚡ [LLM] Attempting text generation with Gemini (${modelName})...`);
-        const model = genAI.getGenerativeModel({ model: modelName });
-        const result = await model.generateContent(prompt);
-        const text = result.response.text();
+        const result = await ai.models.generateContent({
+          model: modelName,
+          contents: prompt,
+          config: {
+            tools: [{ googleSearch: {} }]
+          }
+        });
+        const text = result.text;
         if (text) return text;
       } catch (err) {
         console.warn(`⚠️ [LLM] Gemini (${modelName}) generation failed:`, err instanceof Error ? err.message : String(err));

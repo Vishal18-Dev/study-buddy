@@ -150,7 +150,7 @@ export default function OnboardPage() {
     }
 
     setInput('');
-  }, [step, formData]);
+  }, [step, formData, session?.accessToken]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

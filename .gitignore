@@ -44,3 +44,4 @@ Thumbs.db
 # Agent configuration / logs
 .agents/
 .gemini/
+.vercel
