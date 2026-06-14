@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-// force layout rebuild
+import { Analytics } from "@vercel/analytics/next" // force layout rebuild
 import { Inter } from "next/font/google";
 import "./globals.css";
 import "@/lib/env";
