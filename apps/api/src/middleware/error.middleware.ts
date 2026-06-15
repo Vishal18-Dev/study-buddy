@@ -17,13 +17,12 @@ export function errorMiddleware(
 
   const message =
     statusCode === 500
-      ? `An internal server error occurred: ${err.message || String(err)}`
+      ? 'An internal server error occurred. Please try again.'
       : err.message;
 
   res.status(statusCode).json({
     success: false,
     error: message,
-    debugStack: err.stack,
   });
 }
 
