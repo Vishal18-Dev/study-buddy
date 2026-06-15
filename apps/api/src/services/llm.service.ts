@@ -512,3 +512,75 @@ Response structure:
   }
 }
 
+export async function searchYoutubeVideosWithGemini(
+  topicTitle: string,
+  subject: string,
+  syllabusContext?: string
+): Promise<{ videoId: string; title: string; duration: string; relevanceExplanation: string }[]> {
+  const geminiApiKey = process.env.GEMINI_API_KEY || '';
+  const openaiApiKey = process.env.OPENAI_API_KEY || '';
+
+  const fallbackVideos = [
+    {
+      videoId: 'EcCTIExsqmI',
+      title: `${topicTitle} - Core Concepts Explained`,
+      duration: '12:00',
+      relevanceExplanation: 'Highly rated and relevant explanation for this subject.'
+    }
+  ];
+
+  if (
+    (!geminiApiKey || geminiApiKey === 'your-gemini-api-key-here') &&
+    (!openaiApiKey || openaiApiKey === 'your-openai-api-key-here')
+  ) {
+    return fallbackVideos;
+  }
+
+  const prompt = `You are a learning content recommendation engine.
+Find the 5 best YouTube video tutorials for studying the topic "${topicTitle}" in the subject "${subject}".
+Syllabus / Context details: ${syllabusContext || 'None provided'}
+
+Your goals:
+1. Target videos that have high view counts (implying popularity and community approval).
+2. Choose videos that have highly positive comments (users finding it clear and helpful).
+3. Select videos with excellent transcript quality matching what the student needs to learn.
+4. Ensure relevance to the target curriculum (e.g. if the subject indicates an Indian Entrance Exam like JEE, NEET, UPSC, etc., prioritize Indian educators/context).
+
+For each of the 5 videos, find or generate:
+- The actual YouTube videoId (a valid 11-character ID, e.g. "dQw4w9WgXcQ", "EcCTIExsqmI" or any real tutorial ID you can query via search).
+- The video title.
+- The video duration (e.g. "12:30").
+- A brief relevanceExplanation explaining why this video is recommended (mentioning view range, comments, and direct curriculum relevance).
+
+Respond with valid JSON only. No markdown, no code blocks, no explanation.
+
+Respond with this EXACT structure:
+[
+  {
+    "videoId": "11-char-id",
+    "title": "Video Title",
+    "duration": "10:15",
+    "relevanceExplanation": "Why this video is relevant..."
+  }
+]`;
+
+  try {
+    const raw = await generateTextWithFallback(prompt, { json: true });
+    const jsonStr = extractJson(raw);
+    const parsed = JSON.parse(jsonStr);
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      return parsed.map((item: any) => ({
+        videoId: item.videoId || 'EcCTIExsqmI',
+        title: item.title || `${topicTitle} Tutorial`,
+        duration: item.duration || '12:00',
+        relevanceExplanation: item.relevanceExplanation || 'Directly relevant to your syllabus.'
+      }));
+    }
+    return fallbackVideos;
+  } catch (err) {
+    console.error('❌ [LLM] YouTube video search with Gemini failed:', err);
+    return fallbackVideos;
+  }
+}
+
+

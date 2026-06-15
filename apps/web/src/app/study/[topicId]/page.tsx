@@ -4,7 +4,8 @@ import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import {
   CheckCircle2, Send, Bot, User, ArrowLeft, Clock, Sparkles,
-  PlayCircle, BookOpen, ChevronRight
+  PlayCircle, BookOpen, ChevronRight, ThumbsUp, ThumbsDown,
+  ExternalLink, Lock, Unlock
 } from 'lucide-react';
 import { AppShell } from '@/components/layout/AppShell';
 import { Button } from '@/components/ui/button';
@@ -12,7 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { get, post, patch } from '@/lib/fetcher';
 import { cn } from '@/lib/utils';
-import type { Topic, Plan } from '@/lib/types';
+import type { Topic, Plan, TopicRecommendation } from '@/lib/types';
 
 type ChatMessage = { role: 'user' | 'model'; content: string };
 
@@ -44,10 +45,14 @@ export default function StudyPage() {
   const [notes, setNotes] = useState('');
   
   // Video playlist states
-  type PlaylistVideo = { videoId: string; title: string; duration: string };
+  type PlaylistVideo = { videoId: string; title: string; duration: string; relevanceExplanation?: string };
   const [videos, setVideos] = useState<PlaylistVideo[]>([]);
   const [selectedVideo, setSelectedVideo] = useState<PlaylistVideo | null>(null);
   const [videoLoading, setVideoLoading] = useState<boolean>(false);
+
+  // Recommendations states
+  const [recommendations, setRecommendations] = useState<TopicRecommendation[]>([]);
+  const [loadingRecommendations, setLoadingRecommendations] = useState<boolean>(false);
 
   // Notes autosave states
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'error' | null>(null);
@@ -71,6 +76,33 @@ export default function StudyPage() {
     }
   }, [session?.accessToken]);
 
+  const fetchRecommendations = useCallback(async () => {
+    if (!session?.accessToken) return;
+    setLoadingRecommendations(true);
+    try {
+      const res = await get<TopicRecommendation[]>(`/api/recommendations/${topicId}`, session.accessToken);
+      if (Array.isArray(res)) {
+        setRecommendations(res);
+      }
+    } catch {
+      // fallback to empty
+    } finally {
+      setLoadingRecommendations(false);
+    }
+  }, [session?.accessToken, topicId]);
+
+  const handleRate = async (recId: string, rating: '1' | '-1') => {
+    if (!session?.accessToken) return;
+    try {
+      const res = await post<TopicRecommendation>(`/api/recommendations/${recId}/rate`, { rating }, session.accessToken);
+      if (res) {
+        setRecommendations(prev => prev.map(r => r.id === recId ? { ...r, rating: res.rating } : r).sort((a, b) => b.rating - a.rating));
+      }
+    } catch {
+      // silent
+    }
+  };
+
   const loadTopic = useCallback(async () => {
     if (!session?.accessToken) return;
     try {
@@ -90,9 +122,10 @@ export default function StudyPage() {
           content: `Ready to study **${t.title}**. I can explain concepts, give you practice questions, or help you adjust your plan. What would you like to do?`
         }]);
         fetchVideos(t.title);
+        fetchRecommendations();
       }
     } catch { /* silent */ }
-  }, [session?.accessToken, topicId, fetchVideos]);
+  }, [session?.accessToken, topicId, fetchVideos, fetchRecommendations]);
 
   // Debounce notes value
   useEffect(() => {
@@ -162,6 +195,62 @@ export default function StudyPage() {
       .replace(/\*(.*?)\*/g, '<em>$1</em>')
       .replace(/`(.*?)`/g, '<code class="bg-secondary px-1 py-0.5 rounded text-xs font-mono">$1</code>')
       .replace(/\n/g, '<br/>');
+  };
+
+  const renderResourceRow = (r: TopicRecommendation) => {
+    return (
+      <div key={r.id} className="flex items-center justify-between p-2.5 rounded-lg border border-border bg-secondary/5 hover:bg-secondary/10 transition-colors gap-2 text-xs">
+        <div className="min-w-0 flex-1">
+          <a
+            href={r.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium hover:text-primary hover:underline flex items-center gap-1 text-foreground"
+          >
+            <span className="truncate block">{r.title}</span>
+            <ExternalLink className="h-3 w-3 shrink-0 text-muted-foreground inline" />
+          </a>
+          <div className="flex items-center gap-2 mt-1">
+            <span className={cn(
+              "text-[9px] px-1.5 py-0.5 rounded-full font-semibold",
+              r.platform === 'YouTube' && "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300",
+              r.platform === 'Coursera' && "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300",
+              r.platform === 'Udemy' && "bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300",
+              r.platform === 'Simplilearn' && "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300",
+              r.platform === 'OpenSource' && "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300"
+            )}>
+              {r.platform}
+            </span>
+          </div>
+        </div>
+        
+        {/* Rating buttons */}
+        <div className="flex items-center gap-1 border-l border-border pl-2 shrink-0">
+          <button
+            onClick={() => handleRate(r.id, '1')}
+            className="p-1 rounded hover:bg-emerald-100 dark:hover:bg-emerald-950 text-muted-foreground hover:text-emerald-600 transition-colors"
+            title="Helpful"
+          >
+            <ThumbsUp className="h-3 w-3" />
+          </button>
+          <span className={cn(
+            "text-[10px] font-mono min-w-[12px] text-center font-bold",
+            r.rating > 0 && "text-emerald-600 dark:text-emerald-400",
+            r.rating < 0 && "text-rose-600 dark:text-rose-400",
+            r.rating === 0 && "text-muted-foreground"
+          )}>
+            {r.rating}
+          </span>
+          <button
+            onClick={() => handleRate(r.id, '-1')}
+            className="p-1 rounded hover:bg-rose-100 dark:hover:bg-rose-950 text-muted-foreground hover:text-rose-600 transition-colors"
+            title="Not helpful"
+          >
+            <ThumbsDown className="h-3 w-3" />
+          </button>
+        </div>
+      </div>
+    );
   };
 
   if (!topic) {
@@ -264,6 +353,11 @@ export default function StudyPage() {
                             <div className="min-w-0 flex-1">
                               <p className="truncate font-medium">{vid.title}</p>
                               <p className="text-[10px] text-muted-foreground mt-0.5">Duration: {vid.duration}</p>
+                              {vid.relevanceExplanation && (
+                                <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 italic border-l-2 border-primary/30 pl-1.5 py-0.5 bg-secondary/5 rounded-r">
+                                  {vid.relevanceExplanation}
+                                </p>
+                              )}
                             </div>
                           </button>
                         );
@@ -332,6 +426,52 @@ export default function StudyPage() {
                 id="notes-area"
                 className="w-full h-36 resize-none text-sm p-3 rounded-lg border border-border bg-secondary/30 placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
               />
+            </div>
+
+            {/* Recommended Study Resources Card */}
+            <div className="card-elevated p-4">
+              <h2 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
+                <BookOpen className="h-4 w-4 text-indigo-500" />
+                Recommended Study Resources
+              </h2>
+              {loadingRecommendations ? (
+                <div className="flex flex-col items-center justify-center py-6 gap-2">
+                  <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                  <p className="text-muted-foreground text-xs">Curating resources for you...</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Free / Open Source column */}
+                  <div className="space-y-3">
+                    <h3 className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5 pb-2 border-b border-emerald-100 dark:border-emerald-950">
+                      <Unlock className="h-3.5 w-3.5" />
+                      Free & Open-Source
+                    </h3>
+                    <div className="space-y-2">
+                      {recommendations.filter(r => !r.isPaid).length === 0 ? (
+                        <p className="text-xs text-muted-foreground py-2 italic">No free resources generated yet.</p>
+                      ) : (
+                        recommendations.filter(r => !r.isPaid).map(r => renderResourceRow(r))
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Paid / Premium column */}
+                  <div className="space-y-3">
+                    <h3 className="text-xs font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1.5 pb-2 border-b border-amber-100 dark:border-amber-950">
+                      <Lock className="h-3.5 w-3.5" />
+                      Paid & Premium
+                    </h3>
+                    <div className="space-y-2">
+                      {recommendations.filter(r => r.isPaid).length === 0 ? (
+                        <p className="text-xs text-muted-foreground py-2 italic">No paid resources generated yet.</p>
+                      ) : (
+                        recommendations.filter(r => r.isPaid).map(r => renderResourceRow(r))
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
           </div>

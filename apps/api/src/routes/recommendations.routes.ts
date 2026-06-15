@@ -2,7 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { prisma } from '../lib/prisma';
 import { authMiddleware } from '../middleware/auth.middleware';
-import { generateRecommendationsForTopic } from '../services/llm.service';
+import { generateRecommendationsForTopic, searchYoutubeVideosWithGemini } from '../services/llm.service';
 
 const router = Router();
 
@@ -19,62 +19,25 @@ router.get('/video/search', authMiddleware, async (req: Request, res: Response, 
       return;
     }
 
-    const url = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
-    const response = await fetch(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36'
-      }
+    const userId = req.user!.userId;
+    const activePlan = await prisma.plan.findFirst({
+      where: { userId, status: 'ACTIVE' }
     });
-    const html = await response.text();
 
-    let videos: { videoId: string; title: string; duration: string }[] = [];
+    const syllabusContext = activePlan
+      ? await prisma.syllabusChunk.findFirst({ where: { planId: activePlan.id } })
+      : null;
 
-    try {
-      const startToken = 'var ytInitialData = ';
-      const endToken = ';</script>';
-      const startIndex = html.indexOf(startToken);
-      if (startIndex !== -1) {
-        const jsonStart = startIndex + startToken.length;
-        const endIndex = html.indexOf(endToken, jsonStart);
-        if (endIndex !== -1) {
-          const jsonStr = html.substring(jsonStart, endIndex);
-          const data = JSON.parse(jsonStr);
-          const contents = data.contents?.twoColumnSearchResultsRenderer?.primaryContents?.sectionListRenderer?.contents;
-          if (contents && Array.isArray(contents)) {
-            for (const section of contents) {
-              const itemSection = section.itemSectionRenderer;
-              if (itemSection?.contents && Array.isArray(itemSection.contents)) {
-                for (const item of itemSection.contents) {
-                  if (item.videoRenderer) {
-                    const v = item.videoRenderer;
-                    const videoId = v.videoId;
-                    const title = v.title?.runs?.[0]?.text || 'Video Tutorial';
-                    const lengthText = v.lengthText?.simpleText || 'Video';
-                    if (videoId) {
-                      videos.push({ videoId, title, duration: lengthText });
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    } catch (err) {
-      console.warn('[YouTube Search] JSON parse failed, falling back to regex:', err);
-    }
+    const topicTitle = query.replace(/\s+tutorial\s+lesson/gi, '').trim();
 
-    if (videos.length === 0) {
-      const matches = [...html.matchAll(/"videoId"\s*:\s*"([^"]+)"/g)];
-      const uniqueIds = [...new Set(matches.map(m => m[1]))];
-      videos = uniqueIds.map((id, index) => ({
-        videoId: id,
-        title: `Video Tutorial ${index + 1}`,
-        duration: 'Video'
-      }));
-    }
+    // Call the new searchYoutubeVideosWithGemini service
+    const videos = await searchYoutubeVideosWithGemini(
+      topicTitle,
+      activePlan?.subject || 'General Studies',
+      syllabusContext?.content || undefined
+    );
 
-    res.json({ success: true, data: videos.slice(0, 5) });
+    res.json({ success: true, data: videos });
   } catch (err) {
     next(err);
   }

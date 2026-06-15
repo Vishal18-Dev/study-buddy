@@ -55,3 +55,14 @@ export interface DashboardData {
   recentQuizScores: { topicTitle: string; score: number; passed: boolean }[];
   todayCheckInDone: boolean;
 }
+
+export interface TopicRecommendation {
+  id: string;
+  topicId: string;
+  title: string;
+  url: string;
+  isPaid: boolean;
+  platform: string;
+  rating: number;
+}
+
