@@ -11,18 +11,19 @@ export function errorMiddleware(
   _next: NextFunction
 ): void {
   const statusCode = err.statusCode || 500;
+  
+  // Always log error to console for server logs (Render/etc.)
+  console.error('[ERROR HANDLER]', err.stack || err.message || err);
+
   const message =
     statusCode === 500
-      ? 'An internal server error occurred. Please try again.'
+      ? `An internal server error occurred: ${err.message || String(err)}`
       : err.message;
-
-  if (process.env.NODE_ENV === 'development') {
-    console.error('[ERROR]', err.stack || err.message);
-  }
 
   res.status(statusCode).json({
     success: false,
     error: message,
+    debugStack: err.stack,
   });
 }
 
