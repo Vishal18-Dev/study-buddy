@@ -3,7 +3,7 @@ import { useState, Suspense } from 'react';
 import { signIn, getSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { BookOpen, Mail, Lock } from 'lucide-react';
+import { BookOpen, Mail, Lock, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -57,13 +57,20 @@ function LoginForm() {
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md animate-fade-up">
+        <div className="mb-6">
+          <Link href="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors font-medium">
+            <ArrowLeft className="h-4 w-4" />
+            Back to home
+          </Link>
+        </div>
+
         <div className="flex justify-center mb-8">
-          <div className="flex items-center gap-2">
+          <Link href="/" className="flex items-center gap-2 hover:opacity-85 transition-opacity">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/20">
               <BookOpen className="h-6 w-6 text-primary" />
             </div>
             <span className="text-2xl font-bold gradient-text">StudyBuddy AI</span>
-          </div>
+          </Link>
         </div>
 
         <Card>

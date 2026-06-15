@@ -2,7 +2,7 @@
 // force rebuild
 import { useState, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { Send, Upload, ArrowRight, BookOpen } from 'lucide-react';
+import { Send, Upload, ArrowRight, BookOpen, ArrowLeft } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -176,10 +176,19 @@ export default function OnboardPage() {
     <div className="min-h-screen flex flex-col">
       {/* Header */}
       <header className="glass border-b border-border sticky top-0 z-40">
-        <div className="max-w-2xl mx-auto px-4 h-14 flex items-center gap-2">
-          <BookOpen className="h-5 w-5 text-primary" />
-          <span className="font-bold gradient-text">StudyBuddy AI</span>
-          <span className="text-xs text-muted-foreground ml-auto">Step {Math.min(step + 1, QUESTIONS.length)} of {QUESTIONS.length}</span>
+        <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Link href="/" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors font-medium">
+              <ArrowLeft className="h-4 w-4" />
+              Exit
+            </Link>
+            <div className="h-4 w-px bg-border" />
+            <Link href="/" className="flex items-center gap-2 hover:opacity-85 transition-opacity">
+              <BookOpen className="h-5 w-5 text-primary" />
+              <span className="font-bold gradient-text">StudyBuddy AI</span>
+            </Link>
+          </div>
+          <span className="text-xs text-muted-foreground">Step {Math.min(step + 1, QUESTIONS.length)} of {QUESTIONS.length}</span>
         </div>
       </header>
 
