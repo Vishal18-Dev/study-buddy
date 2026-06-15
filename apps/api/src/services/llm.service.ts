@@ -512,6 +512,81 @@ Response structure:
   }
 }
 
+async function scrapeYoutubeFallback(
+  topicTitle: string,
+  subject: string
+): Promise<{ videoId: string; title: string; duration: string; relevanceExplanation: string }[]> {
+  const query = `${topicTitle} ${subject} tutorial`;
+  const fallbackVideos = [
+    {
+      videoId: 'EcCTIExsqmI',
+      title: `${topicTitle} - Core Concepts Explained`,
+      duration: '12:00',
+      relevanceExplanation: 'Highly rated and relevant explanation for this subject (Fallback resource).'
+    }
+  ];
+
+  try {
+    const searchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
+    const res = await fetch(searchUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36'
+      }
+    });
+    const html = await res.text();
+    const startToken = 'var ytInitialData = ';
+    const endToken = ';</script>';
+    const startIndex = html.indexOf(startToken);
+    if (startIndex === -1) {
+      throw new Error('Could not find ytInitialData in HTML');
+    }
+    
+    const jsonStart = startIndex + startToken.length;
+    const endIndex = html.indexOf(endToken, jsonStart);
+    const jsonStr = html.substring(jsonStart, endIndex);
+    const data = JSON.parse(jsonStr);
+    
+    const contents = data.contents?.twoColumnSearchResultsRenderer?.primaryContents?.sectionListRenderer?.contents;
+    if (!contents) {
+      throw new Error('No contents found in ytInitialData');
+    }
+    
+    const videos: { videoId: string; title: string; duration: string; relevanceExplanation: string }[] = [];
+    for (const section of contents) {
+      const itemSection = section.itemSectionRenderer;
+      if (itemSection?.contents) {
+        for (const item of itemSection.contents) {
+          if (item.videoRenderer) {
+            const v = item.videoRenderer;
+            const videoId = v.videoId;
+            if (!videoId) continue;
+            const title = v.title?.runs?.[0]?.text || `${topicTitle} Tutorial`;
+            const lengthText = v.lengthText?.simpleText || '12:00';
+            const viewsText = v.viewCountText?.simpleText || 'Highly viewed';
+            const channelName = v.ownerText?.runs?.[0]?.text || 'Educational Creator';
+            
+            videos.push({
+              videoId,
+              title,
+              duration: lengthText,
+              relevanceExplanation: `Curated video with high community approval (${viewsText}) by channel "${channelName}". Programmatically matched fallback.`
+            });
+            
+            if (videos.length >= 5) break;
+          }
+        }
+      }
+      if (videos.length >= 5) break;
+    }
+    
+    if (videos.length > 0) return videos;
+    return fallbackVideos;
+  } catch (err) {
+    console.error('⚠️ [YouTube Fallback Scraper] failed:', err);
+    return fallbackVideos;
+  }
+}
+
 export async function searchYoutubeVideosWithGemini(
   topicTitle: string,
   subject: string,
@@ -520,20 +595,12 @@ export async function searchYoutubeVideosWithGemini(
   const geminiApiKey = process.env.GEMINI_API_KEY || '';
   const openaiApiKey = process.env.OPENAI_API_KEY || '';
 
-  const fallbackVideos = [
-    {
-      videoId: 'EcCTIExsqmI',
-      title: `${topicTitle} - Core Concepts Explained`,
-      duration: '12:00',
-      relevanceExplanation: 'Highly rated and relevant explanation for this subject.'
-    }
-  ];
-
   if (
     (!geminiApiKey || geminiApiKey === 'your-gemini-api-key-here') &&
     (!openaiApiKey || openaiApiKey === 'your-openai-api-key-here')
   ) {
-    return fallbackVideos;
+    console.log('⚡ [LLM] No API key configured. Calling YouTube fallback scraper...');
+    return scrapeYoutubeFallback(topicTitle, subject);
   }
 
   const prompt = `You are a learning content recommendation engine.
@@ -576,10 +643,11 @@ Respond with this EXACT structure:
         relevanceExplanation: item.relevanceExplanation || 'Directly relevant to your syllabus.'
       }));
     }
-    return fallbackVideos;
+    console.warn('⚡ [LLM] Returned invalid video search response structure. Calling fallback scraper...');
+    return scrapeYoutubeFallback(topicTitle, subject);
   } catch (err) {
-    console.error('❌ [LLM] YouTube video search with Gemini failed:', err);
-    return fallbackVideos;
+    console.error('❌ [LLM] YouTube video search with Gemini failed. Calling fallback scraper...', err);
+    return scrapeYoutubeFallback(topicTitle, subject);
   }
 }
 

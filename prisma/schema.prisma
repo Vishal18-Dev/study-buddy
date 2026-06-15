@@ -1,6 +1,3 @@
-// This is the single source of truth for the StudyBuddy database schema.
-// Run `npm run prisma:migrate` to apply changes.
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -9,10 +6,6 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
-
-// ─────────────────────────────────────────────
-// Models
-// ─────────────────────────────────────────────
 
 model User {
   id               String            @id @default(cuid())
@@ -23,83 +16,83 @@ model User {
   preference       String            @default("PLAN_ONLY")
   telegramId       String?
   createdAt        DateTime          @default(now())
-  plans            Plan[]
-  streaks          Streak?
-  quizResults      QuizResult[]
   checkIns         CheckIn[]
   knowledgeSources KnowledgeSource[]
+  plans            Plan[]
+  quizResults      QuizResult[]
+  streaks          Streak?
 }
 
 model Plan {
   id               String            @id @default(cuid())
   userId           String
-  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   subject          String
   examDate         DateTime
   goalScore        Int
   dailyHours       Float
   status           String            @default("ACTIVE")
-  days             PlanDay[]
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
   knowledgeSources KnowledgeSource[]
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  days             PlanDay[]
 }
 
 model PlanDay {
   id        String   @id @default(cuid())
   planId    String
-  plan      Plan     @relation(fields: [planId], references: [id], onDelete: Cascade)
   dayNumber Int
   date      DateTime
-  topics    Topic[]
   completed Boolean  @default(false)
   createdAt DateTime @default(now())
+  plan      Plan     @relation(fields: [planId], references: [id], onDelete: Cascade)
+  topics    Topic[]
 }
 
 model Topic {
   id              String                @id @default(cuid())
   planDayId       String
-  planDay         PlanDay               @relation(fields: [planDayId], references: [id], onDelete: Cascade)
   title           String
   estimatedMins   Int
   status          String                @default("NOT_STARTED")
-  quizResults     QuizResult[]
-  recommendations TopicRecommendation[]
   notes           String?
+  quizResults     QuizResult[]
+  planDay         PlanDay               @relation(fields: [planDayId], references: [id], onDelete: Cascade)
+  recommendations TopicRecommendation[]
 }
 
 model Streak {
   id            String    @id @default(cuid())
   userId        String    @unique
-  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   current       Int       @default(0)
   longest       Int       @default(0)
   graceDaysUsed Int       @default(0)
   lastCheckIn   DateTime?
   updatedAt     DateTime  @updatedAt
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model CheckIn {
-  id             String         @id @default(cuid())
+  id             String   @id @default(cuid())
   userId         String
-  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   planId         String
   completionFlag String
-  sessionMins    Int            @default(0)
+  sessionMins    Int      @default(0)
   note           String?
-  createdAt      DateTime       @default(now())
+  createdAt      DateTime @default(now())
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model QuizResult {
   id        String   @id @default(cuid())
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   topicId   String
-  topic     Topic    @relation(fields: [topicId], references: [id], onDelete: Cascade)
   score     Int
   passed    Boolean
   questions String
   createdAt DateTime @default(now())
+  topic     Topic    @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model SyllabusChunk {
@@ -113,23 +106,23 @@ model SyllabusChunk {
 model KnowledgeSource {
   id        String   @id @default(cuid())
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   planId    String
-  plan      Plan     @relation(fields: [planId], references: [id], onDelete: Cascade)
   title     String
-  type      String   // 'pdf' | 'text' | 'youtube' | 'link'
+  type      String
   url       String?
   content   String?
   createdAt DateTime @default(now())
+  plan      Plan     @relation(fields: [planId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model TopicRecommendation {
   id       String  @id @default(cuid())
   topicId  String
-  topic    Topic   @relation(fields: [topicId], references: [id], onDelete: Cascade)
   title    String
   url      String
   isPaid   Boolean
-  platform String  // 'YouTube' | 'Coursera' | 'Udemy' | 'Simplilearn' | 'OpenSource'
+  platform String
   rating   Int     @default(0)
+  topic    Topic   @relation(fields: [topicId], references: [id], onDelete: Cascade)
 }
