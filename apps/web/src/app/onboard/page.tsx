@@ -32,15 +32,50 @@ const QUESTIONS = [
 ];
 
 function parseExamDate(input: string): string {
-  if (/in\s+\d+\s+days?/i.test(input)) {
-    const days = parseInt(input.match(/(\d+)/)?.[1] || '30');
+  const cleanInput = input.trim().toLowerCase();
+
+  // 1. Check for "in X days" or just "X days"
+  const daysMatch = cleanInput.match(/(?:in\s+)?(\d+)\s+days?/i);
+  if (daysMatch) {
+    const days = parseInt(daysMatch[1], 10);
     const d = new Date();
     d.setDate(d.getDate() + days);
     return d.toISOString().split('T')[0];
   }
-  const parsed = new Date(input);
-  if (!isNaN(parsed.getTime())) return parsed.toISOString().split('T')[0];
-  // Default: 30 days
+
+  // 2. Remove ordinal suffixes (st, nd, rd, th) from numbers (e.g. "4th of July" -> "4 of July")
+  const ordinalClean = cleanInput.replace(/(\d+)(st|nd|rd|th)\b/gi, '$1');
+
+  // 3. Remove "of" (e.g. "4 of july" -> "4 july")
+  const ofClean = ordinalClean.replace(/\bof\b/gi, '');
+
+  // 4. Check for DD/MM/YYYY or DD-MM-YYYY
+  const dmyMatch = ofClean.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})$/);
+  if (dmyMatch) {
+    const day = parseInt(dmyMatch[1], 10);
+    const month = parseInt(dmyMatch[2], 10) - 1;
+    const year = parseInt(dmyMatch[3], 10);
+    const d = new Date(year, month, day);
+    if (!isNaN(d.getTime())) return d.toISOString().split('T')[0];
+  }
+
+  // 5. Try parsing via native Date, adding current year if missing
+  let parsed = new Date(ofClean);
+  if (isNaN(parsed.getTime())) {
+    const currentYear = new Date().getFullYear();
+    parsed = new Date(`${ofClean} ${currentYear}`);
+  }
+
+  if (!isNaN(parsed.getTime())) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (parsed < today) {
+      parsed.setFullYear(parsed.getFullYear() + 1);
+    }
+    return parsed.toISOString().split('T')[0];
+  }
+
+  // Default fallback: 30 days
   const d = new Date();
   d.setDate(d.getDate() + 30);
   return d.toISOString().split('T')[0];
