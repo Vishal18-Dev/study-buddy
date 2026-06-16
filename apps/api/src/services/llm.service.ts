@@ -587,6 +587,49 @@ async function scrapeYoutubeFallback(
   }
 }
 
+async function resolveRealVideoId(title: string, fallbackId: string): Promise<string> {
+  try {
+    const searchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(title)}`;
+    const res = await fetch(searchUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36'
+      }
+    });
+    const html = await res.text();
+    const startToken = 'var ytInitialData = ';
+    const endToken = ';</script>';
+    const startIndex = html.indexOf(startToken);
+    if (startIndex === -1) return fallbackId;
+
+    const jsonStart = startIndex + startToken.length;
+    const endIndex = html.indexOf(endToken, jsonStart);
+    const jsonStr = html.substring(jsonStart, endIndex);
+    const data = JSON.parse(jsonStr);
+
+    const contents = data.contents?.twoColumnSearchResultsRenderer?.primaryContents?.sectionListRenderer?.contents;
+    if (!contents) return fallbackId;
+
+    for (const section of contents) {
+      const itemSection = section.itemSectionRenderer;
+      if (itemSection?.contents) {
+        for (const item of itemSection.contents) {
+          if (item.videoRenderer) {
+            const v = item.videoRenderer;
+            const videoId = v.videoId;
+            if (videoId) {
+              return videoId;
+            }
+          }
+        }
+      }
+    }
+    return fallbackId;
+  } catch (err) {
+    console.error(`⚠️ [resolveRealVideoId] Failed to resolve video for "${title}":`, err);
+    return fallbackId;
+  }
+}
+
 export async function searchYoutubeVideosWithGemini(
   topicTitle: string,
   subject: string,
@@ -636,12 +679,21 @@ Respond with this EXACT structure:
     const jsonStr = extractJson(raw);
     const parsed = JSON.parse(jsonStr);
     if (Array.isArray(parsed) && parsed.length > 0) {
-      return parsed.map((item: any) => ({
-        videoId: item.videoId || 'EcCTIExsqmI',
-        title: item.title || `${topicTitle} Tutorial`,
-        duration: item.duration || '12:00',
-        relevanceExplanation: item.relevanceExplanation || 'Directly relevant to your syllabus.'
-      }));
+      const resolved = await Promise.all(
+        parsed.map(async (item: any) => {
+          const rawId = item.videoId || 'EcCTIExsqmI';
+          const title = item.title || `${topicTitle} Tutorial`;
+          // Resolve the actual video ID programmatically to ensure it works
+          const videoId = await resolveRealVideoId(title, rawId);
+          return {
+            videoId,
+            title,
+            duration: item.duration || '12:00',
+            relevanceExplanation: item.relevanceExplanation || 'Directly relevant to your syllabus.'
+          };
+        })
+      );
+      return resolved;
     }
     console.warn('⚡ [LLM] Returned invalid video search response structure. Calling fallback scraper...');
     return scrapeYoutubeFallback(topicTitle, subject);
