@@ -131,11 +131,11 @@ export default function LandingPage() {
             {/* Frosted Frame */}
             <div className="glass p-3 sm:p-5 rounded-[2.5rem] shadow-2xl relative border border-white/20 dark:border-white/10 hover:scale-[1.02] transition-transform duration-500 ease-out">
               <Image 
-                src="/study_hero_companion.png"
+                src="/study_hero_companion.svg"
                 alt="AI Study Companion"
                 width={480}
                 height={480}
-                className="rounded-3xl object-contain dark:opacity-95"
+                className="rounded-3xl object-contain"
                 priority
               />
               {/* Floating micro-badges */}
@@ -246,11 +246,11 @@ export default function LandingPage() {
               <div className="flex items-center gap-4">
                 <div className="relative h-14 w-14 rounded-2xl overflow-hidden border border-orange-500/20 shadow-md">
                   <Image 
-                    src="/study_consistency_flame.png"
+                    src="/study_consistency_flame.svg"
                     alt="Consistency Streak"
                     fill
                     sizes="56px"
-                    className="object-cover animate-pulse"
+                    className="object-cover"
                   />
                 </div>
                 <div>
