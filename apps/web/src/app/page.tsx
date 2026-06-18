@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
+import Image from 'next/image';
 import { 
   ArrowRight, 
   Zap, 
@@ -60,16 +61,17 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="min-h-screen transition-colors duration-300">
+    <div className="min-h-screen transition-colors duration-500 relative overflow-hidden bg-background">
       {/* Dynamic Background Glows */}
-      <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[120px] pointer-events-none -z-10" />
-      <div className="absolute top-1/3 right-1/4 w-[400px] h-[400px] bg-accent/5 rounded-full blur-[100px] pointer-events-none -z-10" />
+      <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-primary/10 dark:bg-primary/20 rounded-full blur-[140px] pointer-events-none -z-10" />
+      <div className="absolute top-1/3 right-1/4 w-[500px] h-[500px] bg-accent/5 dark:bg-accent/15 rounded-full blur-[120px] pointer-events-none -z-10" />
+      <div className="absolute bottom-10 left-10 w-[400px] h-[400px] bg-primary/5 dark:bg-emerald-500/5 rounded-full blur-[100px] pointer-events-none -z-10" />
 
       {/* Nav */}
-      <header className="glass border-b border-border sticky top-0 z-40 transition-colors duration-300">
+      <header className="glass border-b border-border/40 sticky top-0 z-40 transition-colors duration-300">
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/20">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/15 border border-primary/20">
               <BookOpen className="h-5 w-5 text-primary" />
             </div>
             <span className="text-lg font-bold gradient-text">StudyBuddy AI</span>
@@ -77,56 +79,87 @@ export default function LandingPage() {
           <div className="flex items-center gap-3">
             <ThemeToggle />
             <Link href="/login">
-              <Button variant="ghost" size="sm" className="hidden sm:inline-flex rounded-xl">Sign in</Button>
+              <Button variant="ghost" size="sm" className="hidden sm:inline-flex rounded-xl font-medium">Sign in</Button>
             </Link>
             <Link href="/onboard">
-              <Button size="sm" className="rounded-xl shadow-md shadow-primary/20">Get Started</Button>
+              <Button size="sm" className="rounded-xl shadow-md shadow-primary/20 font-semibold">Get Started</Button>
             </Link>
           </div>
         </div>
       </header>
 
       {/* Hero */}
-      <section className="max-w-6xl mx-auto px-4 pt-20 pb-16 text-center">
-        <div className="animate-fade-up">
-          <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-1.5 text-sm text-primary mb-8 backdrop-blur-md">
-            <Sparkles className="h-4 w-4 animate-pulse" />
-            <span>Generate your personalized study blueprint instantly</span>
+      <section className="max-w-6xl mx-auto px-4 pt-12 pb-16 md:pt-20 md:pb-24">
+        <div className="grid lg:grid-cols-12 gap-12 items-center">
+          {/* Left Column: Content */}
+          <div className="lg:col-span-7 text-left space-y-6 md:space-y-8 animate-fade-up">
+            <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 dark:bg-primary/10 px-4 py-1.5 text-xs sm:text-sm text-primary dark:text-primary-foreground/90 backdrop-blur-md">
+              <Sparkles className="h-4 w-4 text-primary dark:text-accent animate-pulse" />
+              <span>Generate your personalized study blueprint instantly</span>
+            </div>
+
+            <h1 className="text-4xl sm:text-6xl font-bold leading-[1.15] tracking-tight">
+              Your personalized AI <br />
+              <span className="gradient-text">study companion.</span>
+            </h1>
+
+            <p className="text-base sm:text-lg text-muted-foreground max-w-xl leading-relaxed">
+              Stop guessing what to study. Get a custom, day-by-day plan in under 2 minutes. Daily check-ins, automated quizzes, and smart rebalancing keep you on track.
+            </p>
+
+            <div className="flex flex-col sm:flex-row items-center gap-4 pt-2">
+              <Link href="/onboard" id="cta-start" className="w-full sm:w-auto">
+                <Button size="xl" className="w-full sm:w-auto rounded-2xl gap-2 shadow-lg shadow-primary/30 dark:shadow-primary/25 text-base font-semibold">
+                  Build My Study Plan
+                  <ArrowRight className="h-5 w-5" />
+                </Button>
+              </Link>
+              <Link href="/login" className="w-full sm:w-auto">
+                <Button variant="outline" size="xl" className="w-full sm:w-auto rounded-2xl text-base glass border-border hover:bg-secondary/60">
+                  Already have a plan? Log in
+                </Button>
+              </Link>
+            </div>
           </div>
 
-          <h1 className="text-5xl sm:text-7xl font-bold leading-tight tracking-tight mb-6">
-            Your personalized AI <br />
-            <span className="gradient-text">study companion.</span>
-          </h1>
-
-          <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
-            Stop guessing what to study. Get a custom, day-by-day plan in under 2 minutes. Daily check-ins, automated quizzes, and smart rebalancing keep you on track.
-          </p>
-
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link href="/onboard" id="cta-start" className="w-full sm:w-auto">
-              <Button size="xl" className="w-full sm:w-auto rounded-2xl gap-2 shadow-lg shadow-primary/30 text-base">
-                Build My Study Plan
-                <ArrowRight className="h-5 w-5" />
-              </Button>
-            </Link>
-            <Link href="/login" className="w-full sm:w-auto">
-              <Button variant="outline" size="xl" className="w-full sm:w-auto rounded-2xl text-base glass border-border hover:bg-secondary">
-                Already have a plan? Log in
-              </Button>
-            </Link>
+          {/* Right Column: Premium Illustration */}
+          <div className="lg:col-span-5 relative flex justify-center items-center">
+            {/* Glowing backdrop elements */}
+            <div className="absolute w-72 h-72 bg-primary/20 dark:bg-primary/30 rounded-full blur-[80px] -z-10 animate-pulse-glow" />
+            <div className="absolute w-48 h-48 bg-accent/20 dark:bg-accent/30 rounded-full blur-[60px] -z-10 bottom-0 right-0" />
+            
+            {/* Frosted Frame */}
+            <div className="glass p-3 sm:p-5 rounded-[2.5rem] shadow-2xl relative border border-white/20 dark:border-white/10 hover:scale-[1.02] transition-transform duration-500 ease-out">
+              <Image 
+                src="/study_hero_companion.png"
+                alt="AI Study Companion"
+                width={480}
+                height={480}
+                className="rounded-3xl object-contain dark:opacity-95"
+                priority
+              />
+              {/* Floating micro-badges */}
+              <div className="absolute -top-4 -left-4 glass py-2 px-3 rounded-2xl border border-white/20 dark:border-white/10 flex items-center gap-2 shadow-lg">
+                <Zap className="h-4 w-4 text-amber-500" />
+                <span className="text-xs font-semibold">AI Powered</span>
+              </div>
+              <div className="absolute -bottom-4 -right-4 glass py-2 px-3 rounded-2xl border border-white/20 dark:border-white/10 flex items-center gap-2 shadow-lg">
+                <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                <span className="text-xs font-semibold">94% Score Gain</span>
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Dynamic Stats Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-3xl mx-auto mt-20 stagger-children">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-4xl mx-auto mt-20 stagger-children">
           {[
             { value: '2 mins', label: 'Plan generation time', icon: Zap, color: 'text-primary' },
-            { value: '94%', label: 'Average score improvement', icon: Star, color: 'text-yellow-500' },
-            { value: '18k+', label: 'Active study hours logged', icon: Flame, color: 'text-orange-500' },
+            { value: '94%', label: 'Average score improvement', icon: Star, color: 'text-yellow-500 fill-yellow-500' },
+            { value: '18k+', label: 'Active study hours logged', icon: Flame, color: 'text-orange-500 fill-orange-500' },
           ].map(({ value, label, icon: Icon, color }) => (
-            <div key={label} className="glass rounded-2xl p-6 border border-border/40 hover:border-primary/30 transition-all duration-300 flex items-center gap-4 text-left">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-secondary/80">
+            <div key={label} className="glass rounded-2xl p-6 border border-border/40 hover:border-primary/30 transition-all duration-300 flex items-center gap-4 text-left shadow-sm hover:shadow-md">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-secondary/80 border border-border/20">
                 <Icon className={`h-6 w-6 ${color}`} />
               </div>
               <div>
@@ -139,7 +172,9 @@ export default function LandingPage() {
       </section>
 
       {/* Interactive Plan & Quiz Playground */}
-      <section className="max-w-6xl mx-auto px-4 py-16">
+      <section className="max-w-6xl mx-auto px-4 py-16 relative">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-accent/5 dark:bg-accent/10 rounded-full blur-[120px] pointer-events-none -z-10" />
+
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold tracking-tight mb-4">
             Experience the <span className="gradient-text">StudyBuddy Interface</span>
@@ -166,7 +201,7 @@ export default function LandingPage() {
               </div>
 
               {/* Day selection tabs */}
-              <div className="flex gap-2 mb-6 border-b border-border/55 pb-4 overflow-x-auto">
+              <div className="flex gap-2 mb-6 border-b border-border/50 pb-4 overflow-x-auto">
                 {[1, 2, 3].map(d => (
                   <button
                     key={d}
@@ -187,7 +222,7 @@ export default function LandingPage() {
                 {mockPlanDays.find(d => d.day === activeDay)?.topics.map((topic, idx) => (
                   <div 
                     key={idx} 
-                    className="p-4 rounded-2xl bg-secondary/40 border border-border/50 flex items-start justify-between gap-4 transition-all hover:bg-secondary/60"
+                    className="p-4 rounded-2xl bg-secondary/30 border border-border/40 flex items-start justify-between gap-4 transition-all hover:bg-secondary/50"
                   >
                     <div className="flex items-start gap-3">
                       <div className="mt-0.5">
@@ -206,22 +241,31 @@ export default function LandingPage() {
               </div>
             </div>
 
-            {/* Daily Check-in & Streak widget */}
-            <div className="mt-8 pt-6 border-t border-border/60 flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-xl bg-orange-500/10 flex items-center justify-center border border-orange-500/20">
-                  <Flame className="h-5 w-5 text-orange-500 animate-streak" />
+            {/* Daily Check-in & Streak widget with illustration */}
+            <div className="mt-8 pt-6 border-t border-border/50 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="relative h-14 w-14 rounded-2xl overflow-hidden border border-orange-500/20 shadow-md">
+                  <Image 
+                    src="/study_consistency_flame.png"
+                    alt="Consistency Streak"
+                    fill
+                    sizes="56px"
+                    className="object-cover animate-pulse"
+                  />
                 </div>
                 <div>
-                  <span className="text-xs text-muted-foreground">Habit Loop Streak</span>
-                  <div className="text-sm font-bold">{streakCount} Days Active</div>
+                  <span className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Habit Loop Streak</span>
+                  <div className="text-lg font-extrabold text-orange-600 dark:text-orange-400 flex items-center gap-1.5">
+                    <Flame className="h-5 w-5 text-orange-500 animate-streak fill-orange-500" />
+                    {streakCount} Days Active
+                  </div>
                 </div>
               </div>
 
               <Button
                 variant={streakChecked ? "outline" : "default"}
                 onClick={handleCheckIn}
-                className={`rounded-xl transition-all ${streakChecked ? 'border-primary/30 text-primary bg-primary/5' : ''}`}
+                className={`rounded-xl transition-all ${streakChecked ? 'border-primary/30 text-primary bg-primary/5' : 'shadow-md shadow-primary/20'}`}
                 disabled={streakChecked}
               >
                 {streakChecked ? 'Checked In for Today ✓' : 'Perform Daily Check-in'}
@@ -319,7 +363,7 @@ export default function LandingPage() {
               description: 'Our conversational AI onboarding maps your baseline knowledge, constraints, and daily hours to formulate the most realistic study timeline.',
               color: 'text-primary',
               bg: 'bg-primary/10',
-              border: 'hover:border-primary/40'
+              border: 'hover:border-primary/40 dark:hover:border-primary/60'
             },
             {
               icon: RefreshCw,
@@ -327,7 +371,7 @@ export default function LandingPage() {
               description: 'Missed a day? No panic. Our algorithms recalculate your remaining topics across the rest of your timeline automatically. Zero manual edits.',
               color: 'text-accent',
               bg: 'bg-accent/10',
-              border: 'hover:border-accent/40'
+              border: 'hover:border-accent/40 dark:hover:border-accent/60'
             },
             {
               icon: Flame,
@@ -335,7 +379,7 @@ export default function LandingPage() {
               description: 'Study habits are built on consistency. Log daily check-ins to build milestones, utilizing automated grace days to protect your streaks.',
               color: 'text-orange-500',
               bg: 'bg-orange-500/10',
-              border: 'hover:border-orange-500/40'
+              border: 'hover:border-orange-500/40 dark:hover:border-orange-500/60'
             },
           ].map(({ icon: Icon, title, description, color, bg, border }) => (
             <Card key={title} className={`p-6 sm:p-8 rounded-3xl glass border border-border/40 transition-all duration-300 flex flex-col gap-5 group hover:shadow-lg ${border}`}>
@@ -353,8 +397,8 @@ export default function LandingPage() {
 
       {/* Final Call to Action */}
       <section className="max-w-3xl mx-auto px-4 py-16 text-center">
-        <div className="glass border-glow rounded-3xl p-8 sm:p-12 relative overflow-hidden shadow-2xl">
-          <div className="absolute top-0 left-0 w-24 h-24 bg-primary/10 rounded-full blur-2xl" />
+        <div className="glass border-glow rounded-[2rem] p-8 sm:p-12 relative overflow-hidden shadow-2xl border border-white/20 dark:border-white/10">
+          <div className="absolute top-0 left-0 w-32 h-32 bg-primary/10 dark:bg-primary/20 rounded-full blur-2xl pointer-events-none" />
           
           <h2 className="text-3xl font-bold tracking-tight mb-4">
             Build your personalized study route <span className="gradient-text">today.</span>
@@ -363,7 +407,7 @@ export default function LandingPage() {
             Generate your interactive dashboard, access mock quizzes, and log check-ins instantly. No account registration required to preview.
           </p>
           <Link href="/onboard">
-            <Button size="xl" className="rounded-2xl gap-2 shadow-lg shadow-primary/20">
+            <Button size="xl" className="rounded-2xl gap-2 shadow-lg shadow-primary/20 font-semibold">
               Build Study Plan
               <ArrowRight className="h-5 w-5" />
             </Button>

@@ -43,6 +43,48 @@
     --success: 142 60% 38%;
     --warning: 38 92% 50%;
     --streak-orange: 24 100% 54%;
+
+    /* Background glows */
+    --glow-start: hsl(224 71% 26% / 0.04);
+    --glow-end: hsl(174 72% 36% / 0.04);
+  }
+
+  .dark {
+    /* Premium dark slate / deep navy background */
+    --background: 222 47% 10%;
+    --foreground: 210 40% 98%;
+
+    --card: 222 47% 12%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222 47% 12%;
+    --popover-foreground: 210 40% 98%;
+
+    /* Glowing primary */
+    --primary: 224 76% 60%;
+    --primary-foreground: 210 40% 98%;
+
+    /* Soft deep slate secondary */
+    --secondary: 222 47% 16%;
+    --secondary-foreground: 210 40% 95%;
+
+    --muted: 222 47% 16%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    /* Bright teal accent */
+    --accent: 174 72% 44%;
+    --accent-foreground: 222 47% 10%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 222 47% 20%;
+    --input: 222 47% 12%;
+    --ring: 224 76% 60%;
+
+    /* Background glows */
+    --glow-start: hsl(224 76% 60% / 0.07);
+    --glow-end: hsl(174 72% 44% / 0.07);
   }
 }
 
@@ -54,17 +96,14 @@
   html {
     font-family: 'Inter', system-ui, sans-serif;
     scroll-behavior: smooth;
-    /* Always light — no dark mode */
-    color-scheme: light;
   }
 
   body {
     @apply bg-background text-foreground;
-    background-color: hsl(36 33% 97%);
-    /* Subtle warm grain texture */
+    background-color: hsl(var(--background));
     background-image:
-      radial-gradient(ellipse at 0% 0%, hsl(224 71% 26% / 0.04) 0%, transparent 60%),
-      radial-gradient(ellipse at 100% 100%, hsl(174 72% 36% / 0.04) 0%, transparent 60%);
+      radial-gradient(ellipse at 0% 0%, var(--glow-start) 0%, transparent 60%),
+      radial-gradient(ellipse at 100% 100%, var(--glow-end) 0%, transparent 60%);
     background-attachment: fixed;
   }
 
@@ -76,36 +115,52 @@
 @layer utilities {
   /* ── Cards ────────────────────────────────── */
   .card-elevated {
-    background: white;
-    border: 1px solid hsl(36 15% 88%);
-    box-shadow: 0 1px 3px hsl(224 71% 12% / 0.06), 0 4px 12px hsl(224 71% 12% / 0.04);
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(0, 0, 0, 0.03);
     border-radius: var(--radius);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .card-elevated:hover {
-    box-shadow: 0 2px 8px hsl(224 71% 12% / 0.1), 0 8px 24px hsl(224 71% 12% / 0.06);
-    transition: box-shadow 0.2s ease;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
   }
 
-  /* Legacy glass (used on sidebar) */
+  /* Frosted premium glassmorphism */
   .glass {
-    background: hsl(0 0% 100% / 0.92);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid hsl(36 15% 88% / 0.8);
+    background: hsl(var(--card) / 0.45);
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    border: 1px solid hsl(var(--border) / 0.45);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.08);
+  }
+
+  .dark .glass {
+    background: hsl(var(--card) / 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
   }
 
   /* ── Gradient text ─────────────────────────── */
   .gradient-text {
-    background: linear-gradient(135deg, hsl(224 71% 26%), hsl(224 71% 42%));
+    background: linear-gradient(135deg, hsl(224 71% 26%), hsl(224 71% 46%));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
 
+  .dark .gradient-text {
+    background: linear-gradient(135deg, hsl(224 76% 68%), hsl(174 72% 54%));
+  }
+
   /* ── Hero gradient banner ───────────────────── */
   .hero-gradient {
     background: linear-gradient(135deg, hsl(224 71% 26%) 0%, hsl(224 71% 34%) 60%, hsl(174 72% 30%) 100%);
+  }
+
+  .dark .hero-gradient {
+    background: linear-gradient(135deg, hsl(224 76% 20%) 0%, hsl(224 76% 35%) 60%, hsl(174 72% 25%) 100%);
   }
 
   /* ── Topic status pill ─────────────────────── */
