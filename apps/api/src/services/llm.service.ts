@@ -386,6 +386,48 @@ Please reply directly to the student's message. Explain any concepts clearly. Re
   }
 }
 
+async function validateAndCleanUrl(url: string, platform: string, title: string): Promise<string> {
+  const cleanPlatform = (platform || 'OpenSource').toLowerCase();
+  
+  const getSearchFallback = () => {
+    const q = encodeURIComponent(title);
+    if (cleanPlatform === 'coursera') return `https://www.coursera.org/search?query=${q}`;
+    if (cleanPlatform === 'udemy') return `https://www.udemy.com/courses/search/?q=${q}`;
+    if (cleanPlatform === 'youtube') return `https://www.youtube.com/results?search_query=${q}`;
+    if (cleanPlatform === 'simplilearn') return `https://www.simplilearn.com/search?q=${q}`;
+    return `https://www.google.com/search?q=${q}`;
+  };
+
+  if (!url || !url.startsWith('http')) {
+    return getSearchFallback();
+  }
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 2000); // 2-second timeout
+
+    const res = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36'
+      },
+      signal: controller.signal
+    });
+    
+    clearTimeout(timeoutId);
+
+    if (res.status === 404) {
+      console.warn(`⚠️ [URL Validator] Dead link detected (404): ${url}. Falling back to search...`);
+      return getSearchFallback();
+    }
+
+    return url;
+  } catch (err) {
+    console.warn(`⚠️ [URL Validator] Failed to connect to ${url}. Falling back to search...`);
+    return getSearchFallback();
+  }
+}
+
 export async function generateRecommendationsForTopic(
   topicTitle: string,
   subject: string
@@ -429,6 +471,7 @@ export async function generateRecommendationsForTopic(
 
   const prompt = `You are a learning resource curator. Suggest exactly 4 high-quality resources (articles, courses, or videos) for the topic: "${topicTitle}" in the subject: "${subject}".
 Include a mix of free open-source resources (like YouTube or open tutorials) and paid platforms (like Coursera, Udemy, or Simplilearn).
+Since you have Google Search Grounding enabled, search the web to find real, active, and working URLs. DO NOT make up, guess, or hallucinate URLs. Only include URLs that you verified exist and are active.
 Respond with valid JSON only. No markdown, no code blocks, no explanation.
 
 Respond with this EXACT structure:
@@ -441,20 +484,28 @@ Respond with this EXACT structure:
   }
 ]
 
-Allowed platforms: "YouTube", "Coursera", "Udemy", "Simplilearn", "OpenSource".
-Make sure the URLs are realistic search or course URLs for the topic.`;
+Allowed platforms: "YouTube", "Coursera", "Udemy", "Simplilearn", "OpenSource".`;
 
   try {
     const raw = await generateTextWithFallback(prompt, { json: true });
     const jsonStr = extractJson(raw);
     const parsed = JSON.parse(jsonStr);
     if (Array.isArray(parsed) && parsed.length > 0) {
-      return parsed.map((item: any) => ({
-        title: item.title || `${topicTitle} Resource`,
-        url: item.url || `https://www.google.com/search?q=${encodeURIComponent(topicTitle)}`,
-        isPaid: !!item.isPaid,
-        platform: item.platform || 'OpenSource'
-      }));
+      const resolved = await Promise.all(
+        parsed.map(async (item: any) => {
+          const rawUrl = item.url || `https://www.google.com/search?q=${encodeURIComponent(item.title || topicTitle)}`;
+          const platform = item.platform || 'OpenSource';
+          const title = item.title || `${topicTitle} Resource`;
+          const url = await validateAndCleanUrl(rawUrl, platform, title);
+          return {
+            title,
+            url,
+            isPaid: !!item.isPaid,
+            platform
+          };
+        })
+      );
+      return resolved;
     }
     return mockRecommendations;
   } catch (err) {
