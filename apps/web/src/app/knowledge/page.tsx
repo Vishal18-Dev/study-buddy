@@ -10,6 +10,7 @@ import { AppShell } from '@/components/layout/AppShell';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
 import { get, post } from '@/lib/fetcher';
 import { cn } from '@/lib/utils';
 
@@ -118,14 +119,14 @@ export default function KnowledgePage() {
 
         {/* Upload card */}
         {!plan && !loading ? (
-          <div className="card-elevated p-6 text-center">
+          <Card glow={true} className="p-6 text-center border border-border/40 shadow-xl">
             <AlertCircle className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
             <p className="font-semibold">No active study plan</p>
             <p className="text-sm text-muted-foreground mt-1">Create a plan first to add knowledge sources.</p>
             <Button className="mt-4" onClick={() => router.push('/onboard')}>Create plan</Button>
-          </div>
+          </Card>
         ) : plan && (
-          <div className="card-elevated p-6">
+          <Card glow={true} className="p-6 border border-border/40 shadow-xl">
             <h2 className="font-semibold text-foreground mb-4 flex items-center gap-2">
               <Plus className="h-4 w-4 text-primary" />
               Add a source
@@ -201,11 +202,11 @@ export default function KnowledgePage() {
                 {uploading ? 'Adding...' : 'Add source'}
               </Button>
             </form>
-          </div>
+          </Card>
         )}
 
         {/* Sources list */}
-        <div className="card-elevated">
+        <Card glow={true} className="border border-border/40 shadow-xl overflow-hidden">
           <div className="flex items-center justify-between px-5 py-4 border-b border-border">
             <h2 className="font-semibold text-foreground flex items-center gap-2">
               <Library className="h-4 w-4 text-primary" />
@@ -215,8 +216,17 @@ export default function KnowledgePage() {
           </div>
 
           {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            <div className="p-5 space-y-4 animate-pulse">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-4 py-2 border-b border-border/10 last:border-0">
+                  <div className="h-9 w-9 bg-secondary/40 dark:bg-card/40 rounded-xl shrink-0" />
+                  <div className="flex-1 space-y-2 min-w-0">
+                    <div className="h-4 bg-secondary/40 dark:bg-card/40 rounded w-1/3" />
+                    <div className="h-3 bg-secondary/30 dark:bg-card/30 rounded w-1/2" />
+                  </div>
+                  <div className="h-5 w-14 bg-secondary/40 dark:bg-card/40 rounded shrink-0" />
+                </div>
+              ))}
             </div>
           ) : sources.length === 0 ? (
             <div className="text-center py-12">
@@ -259,7 +269,7 @@ export default function KnowledgePage() {
               })}
             </div>
           )}
-        </div>
+        </Card>
 
       </div>
     </AppShell>

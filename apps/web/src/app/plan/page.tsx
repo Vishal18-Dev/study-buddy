@@ -114,8 +114,34 @@ export default function PlanPage() {
   if (loading) {
     return (
       <AppShell>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="h-10 w-10 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+        <div className="space-y-6 max-w-6xl mx-auto animate-pulse">
+          {/* Header skeleton */}
+          <div className="flex flex-col sm:flex-row justify-between gap-4 border-b border-border/40 pb-5">
+            <div className="space-y-2">
+              <div className="h-8 w-60 bg-secondary/40 dark:bg-card/40 rounded" />
+              <div className="h-4 w-96 bg-secondary/30 dark:bg-card/30 rounded" />
+            </div>
+            <div className="h-10 w-24 bg-secondary/40 dark:bg-card/40 rounded-xl" />
+          </div>
+
+          {/* Main layout skeleton */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            {/* Left timeline */}
+            <div className="lg:col-span-7 space-y-4">
+              <div className="h-6 w-40 bg-secondary/40 dark:bg-card/40 rounded" />
+              <div className="space-y-3">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="h-16 bg-secondary/20 dark:bg-card/20 rounded-2xl border border-border/20" />
+                ))}
+              </div>
+            </div>
+            
+            {/* Right chat panel */}
+            <div className="lg:col-span-5 space-y-4">
+              <div className="h-6 w-40 bg-secondary/40 dark:bg-card/40 rounded" />
+              <div className="h-[400px] bg-secondary/20 dark:bg-card/20 rounded-3xl border border-border/20" />
+            </div>
+          </div>
         </div>
       </AppShell>
     );
@@ -198,7 +224,7 @@ export default function PlanPage() {
 
             <div className="space-y-3 max-h-[calc(100vh-16rem)] overflow-y-auto pr-2">
               {weeks.map((weekDays, wi) => (
-                <div key={wi} className="glass rounded-2xl overflow-hidden border border-border/40 shadow-sm">
+                <Card key={wi} glow={true} className="overflow-hidden border border-border/40 shadow-sm">
                   <button
                     onClick={() => toggleWeek(wi)}
                     className="w-full flex items-center justify-between px-6 py-4 text-left hover:bg-secondary/30 transition-colors"
@@ -262,7 +288,7 @@ export default function PlanPage() {
                       ))}
                     </div>
                   )}
-                </div>
+                </Card>
               ))}
             </div>
           </div>
@@ -274,7 +300,7 @@ export default function PlanPage() {
               Plan Adjuster Chat
             </h2>
 
-            <Card className="flex-1 flex flex-col justify-between h-[calc(100vh-16rem)] border border-border/40 shadow-lg overflow-hidden glass rounded-3xl">
+            <Card glow={true} className="flex-1 flex flex-col justify-between h-[calc(100vh-16rem)] border border-border/40 shadow-lg overflow-hidden rounded-3xl">
               {/* Message List */}
               <div className="flex-1 overflow-y-auto p-4 space-y-4">
                 {messages.map((m, i) => (

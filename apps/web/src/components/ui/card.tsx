@@ -1,15 +1,39 @@
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 
-const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-  ({ className, ...props }, ref) => (
+const Card = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement> & { glow?: boolean }
+>(({ className, glow, onMouseMove, ...props }, ref) => {
+  const cardRef = React.useRef<HTMLDivElement>(null);
+
+  React.useImperativeHandle(ref, () => cardRef.current!);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!glow || !cardRef.current) return;
+    const rect = cardRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    cardRef.current.style.setProperty('--mouse-x', `${x}px`);
+    cardRef.current.style.setProperty('--mouse-y', `${y}px`);
+    if (onMouseMove) {
+      onMouseMove(e);
+    }
+  };
+
+  return (
     <div
-      ref={ref}
-      className={cn('glass rounded-2xl shadow-xl', className)}
+      ref={cardRef}
+      onMouseMove={glow ? handleMouseMove : onMouseMove}
+      className={cn(
+        'glass rounded-2xl shadow-xl',
+        glow && 'glow-card',
+        className
+      )}
       {...props}
     />
-  )
-);
+  );
+});
 Card.displayName = 'Card';
 
 const CardHeader = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(

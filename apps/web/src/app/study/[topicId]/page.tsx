@@ -11,6 +11,7 @@ import { AppShell } from '@/components/layout/AppShell';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
 import { get, post, patch } from '@/lib/fetcher';
 import { cn } from '@/lib/utils';
 import type { Topic, Plan, TopicRecommendation } from '@/lib/types';
@@ -256,8 +257,34 @@ export default function StudyPage() {
   if (!topic) {
     return (
       <AppShell>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+        <div className="space-y-6 max-w-6xl mx-auto animate-pulse">
+          {/* Back link skeleton */}
+          <div className="h-4 w-32 bg-secondary/30 dark:bg-card/30 rounded" />
+
+          {/* Title skeleton */}
+          <div className="flex justify-between items-center gap-4">
+            <div className="space-y-2">
+              <div className="h-7 w-64 bg-secondary/40 dark:bg-card/40 rounded" />
+              <div className="h-4 w-32 bg-secondary/30 dark:bg-card/30 rounded" />
+            </div>
+            <div className="h-10 w-28 bg-secondary/40 dark:bg-card/40 rounded-xl" />
+          </div>
+
+          {/* Grid skeleton */}
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
+            {/* Left side */}
+            <div className="lg:col-span-3 space-y-5">
+              {/* Video card skeleton */}
+              <div className="h-64 bg-secondary/20 dark:bg-card/20 rounded-2xl border border-border/20" />
+              {/* Notes skeleton */}
+              <div className="h-32 bg-secondary/20 dark:bg-card/20 rounded-2xl border border-border/20" />
+            </div>
+
+            {/* Right side chat skeleton */}
+            <div className="lg:col-span-2">
+              <div className="h-[400px] bg-secondary/20 dark:bg-card/20 rounded-2xl border border-border/20" />
+            </div>
+          </div>
         </div>
       </AppShell>
     );
@@ -310,7 +337,7 @@ export default function StudyPage() {
           <div className="lg:col-span-3 space-y-5">
 
             {/* YouTube resource card */}
-            <div className="card-elevated p-4">
+            <Card glow={true} className="p-4 border border-border/40 shadow-xl">
               <h2 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
                 <PlayCircle className="h-4 w-4 text-red-500" />
                 Curated Videos
@@ -387,10 +414,10 @@ export default function StudyPage() {
                 {selectedVideo ? "Watch on YouTube instead" : "Open YouTube search for this topic"}
                 <ChevronRight className="h-3.5 w-3.5" />
               </a>
-            </div>
+            </Card>
 
             {/* Notes panel */}
-            <div className="card-elevated p-4">
+            <Card glow={true} className="p-4 border border-border/40 shadow-xl">
               <div className="flex items-center justify-between mb-2">
                 <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
                   <BookOpen className="h-4 w-4 text-primary" />
@@ -426,10 +453,10 @@ export default function StudyPage() {
                 id="notes-area"
                 className="w-full h-36 resize-none text-sm p-3 rounded-lg border border-border bg-secondary/30 placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
               />
-            </div>
+            </Card>
 
             {/* Recommended Study Resources Card */}
-            <div className="card-elevated p-4">
+            <Card glow={true} className="p-4 border border-border/40 shadow-xl">
               <h2 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
                 <BookOpen className="h-4 w-4 text-indigo-500" />
                 Recommended Study Resources
@@ -472,13 +499,12 @@ export default function StudyPage() {
                   </div>
                 </div>
               )}
-            </div>
+            </Card>
 
           </div>
 
-          {/* ─ RIGHT: AI Chat ───────────────────── */}
           <div className="lg:col-span-2 flex flex-col">
-            <div className="card-elevated flex flex-col" style={{ height: '560px' }}>
+            <Card glow={true} className="flex flex-col border border-border/40 shadow-xl overflow-hidden" style={{ height: '560px' }}>
               <div className="flex items-center gap-2 px-4 py-3 border-b border-border shrink-0">
                 <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center">
                   <Sparkles className="h-3.5 w-3.5 text-primary" />
@@ -559,7 +585,7 @@ export default function StudyPage() {
                   <Send className="h-4 w-4" />
                 </Button>
               </div>
-            </div>
+            </Card>
           </div>
 
         </div>

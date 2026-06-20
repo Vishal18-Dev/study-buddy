@@ -39,6 +39,41 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('is-visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.05, rootMargin: '0px 0px -50px 0px' }
+    );
+
+    const scanAndObserve = () => {
+      document.querySelectorAll('.reveal-on-scroll:not(.is-visible)').forEach((el) => {
+        observer.observe(el);
+      });
+    };
+
+    scanAndObserve();
+
+    const mutationObserver = new MutationObserver(() => {
+      scanAndObserve();
+    });
+
+    mutationObserver.observe(document.body, { childList: true, subtree: true });
+
+    return () => {
+      observer.disconnect();
+      mutationObserver.disconnect();
+    };
+  }, []);
+
   const toggleTheme = () => {
     const nextTheme = theme === 'light' ? 'dark' : 'light';
     setTheme(nextTheme);

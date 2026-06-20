@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import Image from 'next/image';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowRight, 
   Zap, 
@@ -13,7 +14,9 @@ import {
   Sparkles, 
   CheckCircle2, 
   HelpCircle,
-  RotateCcw
+  RotateCcw,
+  ArrowRightLeft,
+  GraduationCap
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -96,22 +99,22 @@ export default function LandingPage() {
       <section className="max-w-6xl mx-auto px-4 pt-12 pb-16 md:pt-20 md:pb-24">
         <div className="grid lg:grid-cols-12 gap-12 items-center">
           {/* Left Column: Content */}
-          <div className="lg:col-span-7 text-left space-y-6 md:space-y-8 animate-fade-up">
-            <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 dark:bg-primary/10 px-4 py-1.5 text-xs sm:text-sm text-primary dark:text-primary-foreground/90 backdrop-blur-md">
+          <div className="lg:col-span-7 text-left space-y-6 md:space-y-8 reveal-on-scroll">
+            <div className="reveal-on-scroll delay-50 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 dark:bg-primary/10 px-4 py-1.5 text-xs sm:text-sm text-primary dark:text-primary-foreground/90 backdrop-blur-md">
               <Sparkles className="h-4 w-4 text-primary dark:text-accent animate-pulse" />
               <span>Generate your personalized study blueprint instantly</span>
             </div>
 
-            <h1 className="text-4xl sm:text-6xl font-bold leading-[1.15] tracking-tight">
+            <h1 className="reveal-on-scroll delay-100 fluid-h1 font-extrabold tracking-tight text-foreground">
               Your personalized AI <br />
               <span className="gradient-text">study companion.</span>
             </h1>
 
-            <p className="text-base sm:text-lg text-muted-foreground max-w-xl leading-relaxed">
+            <p className="reveal-on-scroll delay-150 text-base sm:text-lg text-muted-foreground max-w-[65ch] leading-relaxed">
               Stop guessing what to study. Get a custom, day-by-day plan in under 2 minutes. Daily check-ins, automated quizzes, and smart rebalancing keep you on track.
             </p>
 
-            <div className="flex flex-col sm:flex-row items-center gap-4 pt-2">
+            <div className="reveal-on-scroll delay-200 flex flex-col sm:flex-row items-center gap-4 pt-2">
               <Link href="/onboard" id="cta-start" className="w-full sm:w-auto">
                 <Button size="xl" className="w-full sm:w-auto rounded-2xl gap-2 shadow-lg shadow-primary/30 dark:shadow-primary/25 text-base font-semibold">
                   Build My Study Plan
@@ -127,7 +130,7 @@ export default function LandingPage() {
           </div>
 
           {/* Right Column: Premium Illustration */}
-          <div className="lg:col-span-5 relative flex justify-center items-center">
+          <div className="lg:col-span-5 relative flex justify-center items-center reveal-on-scroll delay-200">
             {/* Glowing backdrop elements */}
             <div className="absolute w-72 h-72 bg-primary/20 dark:bg-primary/30 rounded-full blur-[80px] -z-10 animate-pulse-glow" />
             <div className="absolute w-48 h-48 bg-accent/20 dark:bg-accent/30 rounded-full blur-[60px] -z-10 bottom-0 right-0" />
@@ -156,13 +159,13 @@ export default function LandingPage() {
         </div>
 
         {/* Dynamic Stats Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-4xl mx-auto mt-20 stagger-children">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-4xl mx-auto mt-20 reveal-on-scroll delay-300">
           {[
             { value: '2 mins', label: 'Plan generation time', icon: Zap, color: 'text-primary' },
             { value: '94%', label: 'Average score improvement', icon: Star, color: 'text-yellow-500 fill-yellow-500' },
             { value: '18k+', label: 'Active study hours logged', icon: Flame, color: 'text-orange-500 fill-orange-500' },
           ].map(({ value, label, icon: Icon, color }) => (
-            <div key={label} className="glass rounded-2xl p-6 border border-border/40 hover:border-primary/30 transition-all duration-300 flex items-center gap-4 text-left shadow-sm hover:shadow-md">
+            <Card key={label} glow={true} className="p-6 border border-border/40 flex items-center gap-4 text-left shadow-sm">
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-secondary/80 border border-border/20">
                 <Icon className={`h-6 w-6 ${color}`} />
               </div>
@@ -170,78 +173,90 @@ export default function LandingPage() {
                 <div className="text-2xl font-bold font-sans">{value}</div>
                 <div className="text-xs text-muted-foreground mt-0.5">{label}</div>
               </div>
-            </div>
+            </Card>
           ))}
         </div>
       </section>
 
       {/* Interactive Plan & Quiz Playground */}
-      <section className="max-w-6xl mx-auto px-4 py-16 relative">
+      <section className="max-w-6xl mx-auto px-4 py-16 relative reveal-on-scroll">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-accent/5 dark:bg-accent/10 rounded-full blur-[120px] pointer-events-none -z-10" />
 
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold tracking-tight mb-4">
+        <div className="text-center mb-12 space-y-3">
+          <h2 className="fluid-h2 font-bold tracking-tight text-foreground">
             Experience the <span className="gradient-text">Unslump Interface</span>
           </h2>
-          <p className="text-muted-foreground max-w-xl mx-auto">
+          <p className="text-muted-foreground max-w-[65ch] mx-auto text-sm sm:text-base">
             Interact with this live mock simulator to see how Unslump structures your topics, tracks consistency, and tests your memory.
           </p>
         </div>
 
         <div className="grid lg:grid-cols-12 gap-8 items-stretch">
           {/* Left panel: Daily Blueprint Card */}
-          <Card className="lg:col-span-7 glass border border-border/40 p-6 sm:p-8 flex flex-col justify-between rounded-3xl shadow-xl">
+          <Card glow={true} className="lg:col-span-7 p-6 sm:p-8 flex flex-col justify-between rounded-3xl border border-border/40 shadow-xl">
             <div>
               <div className="flex items-center justify-between mb-6">
                 <div>
                   <span className="text-xs font-semibold text-primary uppercase tracking-wider">Interactive Preview</span>
                   <h3 className="text-xl font-bold mt-1">Your Biology Revision Plan</h3>
                 </div>
-                {/* Theme mode preview badge */}
                 <div className="bg-secondary px-3 py-1 rounded-full text-xs font-medium text-muted-foreground flex items-center gap-1.5 border border-border">
                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                   Active
                 </div>
               </div>
 
-              {/* Day selection tabs */}
-              <div className="flex gap-2 mb-6 border-b border-border/50 pb-4 overflow-x-auto">
+              {/* Day selection tabs with sliding pill */}
+              <div className="flex gap-2 mb-6 border-b border-border/50 pb-4 overflow-x-auto relative">
                 {[1, 2, 3].map(d => (
                   <button
                     key={d}
                     onClick={() => setActiveDay(d)}
-                    className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
+                    className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all relative ${
                       activeDay === d 
-                        ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20' 
-                        : 'bg-secondary/60 text-muted-foreground hover:text-foreground hover:bg-secondary'
+                        ? 'text-primary-foreground' 
+                        : 'text-muted-foreground hover:text-foreground'
                     }`}
                   >
-                    Day {d}
+                    <span className="relative z-10">Day {d}</span>
+                    {activeDay === d && (
+                      <motion.span
+                        layoutId="activeDayTab"
+                        className="absolute inset-0 bg-primary rounded-xl shadow-md shadow-primary/20"
+                        transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                      />
+                    )}
                   </button>
                 ))}
               </div>
 
-              {/* Day topics list */}
-              <div className="space-y-4">
-                {mockPlanDays.find(d => d.day === activeDay)?.topics.map((topic, idx) => (
-                  <div 
-                    key={idx} 
-                    className="p-4 rounded-2xl bg-secondary/30 border border-border/40 flex items-start justify-between gap-4 transition-all hover:bg-secondary/50"
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className="mt-0.5">
-                        <CheckCircle2 className={`h-5 w-5 ${topic.completed || (activeDay === 1 && idx === 0) ? 'text-primary' : 'text-muted-foreground/40'}`} />
+              {/* Day topics list with layout transitions */}
+              <div className="space-y-4 min-h-[160px] overflow-hidden">
+                <AnimatePresence mode="popLayout">
+                  {mockPlanDays.find(d => d.day === activeDay)?.topics.map((topic, idx) => (
+                    <motion.div 
+                      key={`${activeDay}-${idx}-${topic.title}`}
+                      initial={{ opacity: 0, y: 15 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -15 }}
+                      transition={{ duration: 0.25, ease: 'easeInOut' }}
+                      className="p-4 rounded-2xl bg-secondary/30 border border-border/40 flex items-start justify-between gap-4 transition-all hover:bg-secondary/50"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="mt-0.5">
+                          <CheckCircle2 className={`h-5 w-5 ${topic.completed || (activeDay === 1 && idx === 0) ? 'text-primary' : 'text-muted-foreground/40'}`} />
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-sm leading-snug">{topic.title}</h4>
+                          <span className="text-xs text-muted-foreground mt-1 block">Duration: {topic.mins} minutes</span>
+                        </div>
                       </div>
-                      <div>
-                        <h4 className="font-semibold text-sm leading-snug">{topic.title}</h4>
-                        <span className="text-xs text-muted-foreground mt-1 block">Duration: {topic.mins} minutes</span>
-                      </div>
-                    </div>
-                    <span className="text-xs bg-primary/10 text-primary border border-primary/20 px-2.5 py-1 rounded-full font-medium whitespace-nowrap">
-                      {topic.completed || (activeDay === 1 && idx === 0) ? 'Completed' : 'Pending'}
-                    </span>
-                  </div>
-                ))}
+                      <span className="text-xs bg-primary/10 text-primary border border-primary/20 px-2.5 py-1 rounded-full font-medium whitespace-nowrap">
+                        {topic.completed || (activeDay === 1 && idx === 0) ? 'Completed' : 'Pending'}
+                      </span>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
               </div>
             </div>
 
@@ -278,7 +293,7 @@ export default function LandingPage() {
           </Card>
 
           {/* Right panel: Live Quiz Simulator */}
-          <Card className="lg:col-span-5 glass border border-border/40 p-6 sm:p-8 flex flex-col justify-between rounded-3xl shadow-xl">
+          <Card glow={true} className="lg:col-span-5 p-6 sm:p-8 flex flex-col justify-between rounded-3xl border border-border/40 shadow-xl">
             <div>
               <div className="flex items-center gap-2 mb-4">
                 <HelpCircle className="h-5 w-5 text-accent" />
@@ -353,61 +368,118 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Feature Walkthrough */}
+      {/* Feature Bento Grid */}
       <section className="max-w-6xl mx-auto px-4 py-20 border-t border-border/40" id="features">
-        <h2 className="text-3xl font-bold text-center tracking-tight mb-12">
-          Intelligent tools built to <span className="gradient-text">guarantee consistency</span>
-        </h2>
+        <div className="text-center mb-16 reveal-on-scroll">
+          <h2 className="fluid-h2 font-bold tracking-tight mb-4">
+            Intelligent tools built to <span className="gradient-text">guarantee consistency</span>
+          </h2>
+          <p className="text-muted-foreground max-w-[65ch] mx-auto text-sm sm:text-base">
+            Every feature is engineered around habit loops, helping you stay consistent, rebalance your time, and study stress-free.
+          </p>
+        </div>
 
-        <div className="grid sm:grid-cols-3 gap-8 stagger-children">
-          {[
-            {
-              icon: Zap,
-              title: '2-Minute Consultation',
-              description: 'Our conversational AI onboarding maps your baseline knowledge, constraints, and daily hours to formulate the most realistic study timeline.',
-              color: 'text-primary',
-              bg: 'bg-primary/10',
-              border: 'hover:border-primary/40 dark:hover:border-primary/60'
-            },
-            {
-              icon: RefreshCw,
-              title: 'Smart Rebalancing',
-              description: 'Missed a day? No panic. Our algorithms recalculate your remaining topics across the rest of your timeline automatically. Zero manual edits.',
-              color: 'text-accent',
-              bg: 'bg-accent/10',
-              border: 'hover:border-accent/40 dark:hover:border-accent/60'
-            },
-            {
-              icon: Flame,
-              title: 'Streak & Grace Logic',
-              description: 'Study habits are built on consistency. Log daily check-ins to build milestones, utilizing automated grace days to protect your streaks.',
-              color: 'text-orange-500',
-              bg: 'bg-orange-500/10',
-              border: 'hover:border-orange-500/40 dark:hover:border-orange-500/60'
-            },
-          ].map(({ icon: Icon, title, description, color, bg, border }) => (
-            <Card key={title} className={`p-6 sm:p-8 rounded-3xl glass border border-border/40 transition-all duration-300 flex flex-col gap-5 group hover:shadow-lg ${border}`}>
-              <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${bg}`}>
-                <Icon className={`h-6 w-6 ${color} group-hover:scale-110 transition-transform`} />
+        {/* Bento Grid layout */}
+        <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto reveal-on-scroll delay-100">
+          
+          {/* Card 1: 2-Minute Onboarding (Spans 2 columns) */}
+          <Card glow={true} className="md:col-span-2 p-6 sm:p-8 rounded-3xl border border-border/40 flex flex-col justify-between gap-6 hover:scale-[1.01] transition-transform duration-300">
+            <div className="flex flex-col gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10">
+                <Zap className="h-6 w-6 text-primary" />
               </div>
-              <div>
-                <h3 className="font-bold text-lg mb-2">{title}</h3>
-                <p className="text-muted-foreground text-sm leading-relaxed">{description}</p>
+              <h3 className="font-bold text-xl">2-Minute Dynamic Onboarding</h3>
+              <p className="text-muted-foreground text-sm max-w-[65ch] leading-relaxed">
+                Our conversational onboarding gets to know your baseline syllabus, remaining timeline, constraints, and daily hour budgets to generate the most realistic preparation blueprint possible.
+              </p>
+            </div>
+            
+            {/* Visual preview of onboarding chat */}
+            <div className="p-4 rounded-2xl bg-secondary/30 border border-border/20 flex flex-col gap-2.5 max-w-lg shadow-inner">
+              <div className="flex gap-2">
+                <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary">AI</div>
+                <div className="bg-background rounded-2xl px-3 py-1.5 text-xs text-foreground shadow-sm">
+                  What exam are you studying for, and when is it scheduled?
+                </div>
               </div>
-            </Card>
-          ))}
+              <div className="flex gap-2 justify-end">
+                <div className="bg-primary text-white rounded-2xl px-3 py-1.5 text-xs shadow-sm">
+                  AP Biology exam on July 4th. I want to aim for a 90% score!
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          {/* Card 2: Smart Rebalancing (Spans 1 column) */}
+          <Card glow={true} className="md:col-span-1 p-6 sm:p-8 rounded-3xl border border-border/40 flex flex-col justify-between gap-6 hover:scale-[1.01] transition-transform duration-300">
+            <div className="flex flex-col gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-accent/10">
+                <RefreshCw className="h-6 w-6 text-accent" />
+              </div>
+              <h3 className="font-bold text-xl">Smart Rebalancing</h3>
+              <p className="text-muted-foreground text-sm leading-relaxed">
+                Missed a study block? Don&apos;t panic. Our scheduler automatically distributes missed topics across remaining days without messy spreadsheets.
+              </p>
+            </div>
+            
+            {/* Rebalance icon layout */}
+            <div className="flex justify-center items-center py-4 bg-secondary/20 rounded-2xl border border-border/10">
+              <ArrowRightLeft className="h-10 w-10 text-accent animate-pulse" />
+            </div>
+          </Card>
+
+          {/* Card 3: Streak & Grace (Spans 1 column) */}
+          <Card glow={true} className="md:col-span-1 p-6 sm:p-8 rounded-3xl border border-border/40 flex flex-col justify-between gap-6 hover:scale-[1.01] transition-transform duration-300">
+            <div className="flex flex-col gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-500/10">
+                <Flame className="h-6 w-6 text-orange-500" />
+              </div>
+              <h3 className="font-bold text-xl">Grace Logic</h3>
+              <p className="text-muted-foreground text-sm leading-relaxed">
+                Habits grow when protected. Log check-ins to build momentum, using built-in grace days to safeguard your active streak during busy weeks.
+              </p>
+            </div>
+            
+            {/* Streak graphic */}
+            <div className="flex items-center justify-center gap-3 p-3 bg-secondary/30 rounded-2xl border border-border/20">
+              <span className="text-xs font-bold text-orange-500 flex items-center gap-1">
+                <Flame className="h-4 w-4 fill-orange-500" /> +1 Streak Checked!
+              </span>
+            </div>
+          </Card>
+
+          {/* Card 4: Daily Assessments (Spans 2 columns) */}
+          <Card glow={true} className="md:col-span-2 p-6 sm:p-8 rounded-3xl border border-border/40 flex flex-col justify-between gap-6 hover:scale-[1.01] transition-transform duration-300">
+            <div className="flex flex-col gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500/10">
+                <GraduationCap className="h-6 w-6 text-emerald-500" />
+              </div>
+              <h3 className="font-bold text-xl">Retrieval-Practice Quizzes</h3>
+              <p className="text-muted-foreground text-sm max-w-[65ch] leading-relaxed">
+                Unlock daily revision assessments once you finish your scheduled topics. Customized quizzes test active recall rather than passive recognition, confirming retention.
+              </p>
+            </div>
+
+            {/* Smart quiz snippet */}
+            <div className="flex flex-wrap gap-2.5 max-w-md">
+              <span className="text-[10px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 px-2.5 py-1 rounded-full">A. Mitochondria ✓ Correct</span>
+              <span className="text-[10px] font-semibold bg-secondary/50 text-muted-foreground border border-border/40 px-2.5 py-1 rounded-full">B. Ribosome</span>
+              <span className="text-[10px] font-semibold bg-secondary/50 text-muted-foreground border border-border/40 px-2.5 py-1 rounded-full">C. Golgi Body</span>
+            </div>
+          </Card>
+
         </div>
       </section>
 
       {/* Final Call to Action */}
-      <section className="max-w-3xl mx-auto px-4 py-16 text-center">
-        <div className="glass border-glow rounded-[2rem] p-8 sm:p-12 relative overflow-hidden shadow-2xl border border-white/20 dark:border-white/10">
+      <section className="max-w-3xl mx-auto px-4 py-16 text-center reveal-on-scroll">
+        <Card glow={true} className="p-8 sm:p-12 relative overflow-hidden shadow-2xl border border-white/20 dark:border-white/10 rounded-[2rem]">
           <div className="absolute top-0 left-0 w-32 h-32 bg-primary/10 dark:bg-primary/20 rounded-full blur-2xl pointer-events-none" />
           
-          <h2 className="text-3xl font-bold tracking-tight mb-4">
+          <h2 className="fluid-h2 font-bold tracking-tight mb-4">
             Build your personalized study route <span className="gradient-text">today.</span>
           </h2>
-          <p className="text-muted-foreground max-w-md mx-auto mb-8 text-sm sm:text-base">
+          <p className="text-muted-foreground max-w-[65ch] mx-auto mb-8 text-sm sm:text-base">
             Generate your interactive dashboard, access mock quizzes, and log check-ins instantly. No account registration required to preview.
           </p>
           <Link href="/onboard">
@@ -416,7 +488,7 @@ export default function LandingPage() {
               <ArrowRight className="h-5 w-5" />
             </Button>
           </Link>
-        </div>
+        </Card>
       </section>
 
       {/* Footer */}
