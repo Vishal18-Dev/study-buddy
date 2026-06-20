@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { get, post } from '@/lib/fetcher';
 import { formatDate, formatMins, cn } from '@/lib/utils';
+import { usePlan } from '@/components/providers/PlanContext';
 import type { Plan } from '@/lib/types';
 
 type Message = { role: 'user' | 'assistant'; text: string };
@@ -17,6 +18,7 @@ type Message = { role: 'user' | 'assistant'; text: string };
 export default function PlanPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const { plans } = usePlan();
   const [plan, setPlan] = useState<Plan | null>(null);
   const [loading, setLoading] = useState(true);
   const [replanning, setReplanning] = useState(false);
@@ -186,7 +188,17 @@ export default function PlanPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/40 pb-5">
           <div>
-            <h1 className="text-3xl font-extrabold tracking-tight gradient-text">{plan.subject}</h1>
+            <div className="flex items-center gap-2 mb-1">
+              <h1 className="text-3xl font-extrabold tracking-tight gradient-text">{plan.subject}</h1>
+              {plans.length > 1 && (
+                <button
+                  onClick={() => router.push('/plans')}
+                  className="text-[10px] font-medium text-muted-foreground hover:text-foreground border border-border/40 hover:border-border px-2 py-0.5 rounded-full transition-all"
+                >
+                  Switch plan
+                </button>
+              )}
+            </div>
             <p className="text-muted-foreground text-sm mt-1">Exam: {formatDate(plan.examDate)} • Goal: {plan.goalScore}% • Availability: {plan.dailyHours}h/day</p>
           </div>
           <div className="flex items-center gap-3">

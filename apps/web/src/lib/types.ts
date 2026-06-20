@@ -24,8 +24,20 @@ export interface Plan {
   examDate: string;
   goalScore: number;
   dailyHours: number;
-  status: string;
+  status: 'ACTIVE' | 'PAUSED' | 'COMPLETE' | 'ABANDONED';
   days: PlanDay[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PlanSummary {
+  id: string;
+  subject: string;
+  examDate: string;
+  goalScore: number;
+  dailyHours: number;
+  status: 'ACTIVE' | 'PAUSED' | 'COMPLETE' | 'ABANDONED';
+  coveragePercent: number;
   createdAt: string;
   updatedAt: string;
 }

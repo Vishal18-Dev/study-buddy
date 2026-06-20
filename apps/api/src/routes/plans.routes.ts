@@ -52,10 +52,10 @@ router.post('/create', async (req: Request, res: Response, next: NextFunction) =
       userId = guest.id;
     }
 
-    // Mark any existing active plan as abandoned
+    // Pause any existing active plans (preserve progress)
     await prisma.plan.updateMany({
       where: { userId, status: 'ACTIVE' },
-      data: { status: 'ABANDONED' },
+      data: { status: 'PAUSED' },
     });
 
     // Generate plan via LLM
@@ -99,6 +99,118 @@ router.post('/create', async (req: Request, res: Response, next: NextFunction) =
     });
 
     res.status(201).json({ success: true, data: { plan, summary: llmPlan.summary } });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /api/plans — list all plans for the authenticated user (lightweight)
+router.get('/', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.user!.userId;
+    const plans = await prisma.plan.findMany({
+      where: { userId, status: { not: 'ABANDONED' } },
+      include: {
+        days: {
+          include: { topics: { select: { status: true } } },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    // Compute coverage % for each plan
+    const plansWithCoverage = plans.map((plan) => {
+      const allTopics = plan.days.flatMap((d) => d.topics);
+      const completedTopics = allTopics.filter((t) => t.status === 'COMPLETE');
+      const coveragePercent =
+        allTopics.length > 0
+          ? Math.round((completedTopics.length / allTopics.length) * 100)
+          : 0;
+      return {
+        id: plan.id,
+        subject: plan.subject,
+        examDate: plan.examDate,
+        goalScore: plan.goalScore,
+        dailyHours: plan.dailyHours,
+        status: plan.status,
+        coveragePercent,
+        createdAt: plan.createdAt,
+        updatedAt: plan.updatedAt,
+      };
+    });
+
+    res.json({ success: true, data: plansWithCoverage });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PATCH /api/plans/:planId/activate — switch active plan
+router.patch('/:planId/activate', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.user!.userId;
+    const planId = req.params.planId;
+
+    // Verify ownership
+    const plan = await prisma.plan.findFirst({
+      where: { id: planId, userId, status: { not: 'ABANDONED' } },
+    });
+
+    if (!plan) {
+      res.status(404).json({ success: false, error: 'Plan not found' });
+      return;
+    }
+
+    // Pause all currently active plans, then activate the target
+    await prisma.$transaction([
+      prisma.plan.updateMany({
+        where: { userId, status: 'ACTIVE' },
+        data: { status: 'PAUSED' },
+      }),
+      prisma.plan.update({
+        where: { id: planId },
+        data: { status: 'ACTIVE' },
+      }),
+    ]);
+
+    res.json({ success: true, message: 'Plan activated' });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// DELETE /api/plans/:planId — soft-delete (set to ABANDONED)
+router.delete('/:planId', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.user!.userId;
+    const planId = req.params.planId;
+
+    const plan = await prisma.plan.findFirst({
+      where: { id: planId, userId },
+    });
+
+    if (!plan) {
+      res.status(404).json({ success: false, error: 'Plan not found' });
+      return;
+    }
+
+    if (plan.status === 'ACTIVE') {
+      // Prevent deleting the only active plan — must activate another first
+      const otherPlans = await prisma.plan.count({
+        where: { userId, status: { not: 'ABANDONED' }, id: { not: planId } },
+      });
+      if (otherPlans === 0) {
+        res.status(400).json({ success: false, error: 'Cannot delete the only active plan. Create another plan first.' });
+        return;
+      }
+    }
+
+    await prisma.plan.update({
+      where: { id: planId },
+      data: { status: 'ABANDONED' },
+    });
+
+    res.json({ success: true, message: 'Plan deleted' });
   } catch (err) {
     next(err);
   }
@@ -188,10 +300,10 @@ router.post('/:planId/claim', authMiddleware, async (req: Request, res: Response
       select: { id: true, email: true },
     });
 
-    // Mark any existing active plans of this user as abandoned
+    // Pause any existing active plans (preserve progress)
     await prisma.plan.updateMany({
       where: { userId, status: 'ACTIVE' },
-      data: { status: 'ABANDONED' },
+      data: { status: 'PAUSED' },
     });
 
     // Reassign this plan to the authenticated user

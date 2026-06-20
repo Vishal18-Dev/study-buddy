@@ -1,14 +1,16 @@
 'use client';
 // force rebuild
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, Suspense } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Send, Upload, ArrowRight, BookOpen, ArrowLeft } from 'lucide-react';
 import { useSession } from 'next-auth/react';
+import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { post } from '@/lib/fetcher';
+import { usePlan } from '@/components/providers/PlanContext';
 import type { Plan } from '@/lib/types';
 
 type Message = { role: 'bot' | 'user'; text: string };
@@ -98,8 +100,11 @@ const knowledgeMap: Record<string, KnowledgeLevel> = {
   '3': 'REVISION',
 };
 
-export default function OnboardPage() {
+function OnboardContent() {
   const { data: session, status } = useSession();
+  const { refreshPlans } = usePlan();
+  const searchParams = useSearchParams();
+  const fromPlans = searchParams?.get('from') === 'plans';
   const [messages, setMessages] = useState<Message[]>([
     { role: 'bot', text: "Hi! I'm Unslump. Let's build your personalised study plan — it only takes 2 minutes. " + QUESTIONS[0].text },
   ]);
@@ -181,6 +186,8 @@ export default function OnboardPage() {
         setPlan(result.plan);
         setPlanSummary(result.summary);
         localStorage.setItem('pendingPlanId', result.plan.id);
+        // Refresh the global plan context so the switcher updates
+        refreshPlans();
 
         setTimeout(() => {
           addBot(`Your plan is ready! Here\'s the overview:\n\n${result.summary}\n\nYou have ${result.plan.days.length} days planned. Save your plan to track progress and access it anytime.`);
@@ -294,9 +301,9 @@ export default function OnboardPage() {
                 )}
               </div>
               {status === 'authenticated' ? (
-                <Link href="/dashboard">
+                <Link href="/plans">
                   <Button className="w-full" size="lg">
-                    Go to Dashboard
+                    View All My Plans
                     <ArrowRight className="h-4 w-4" />
                   </Button>
                 </Link>
@@ -374,5 +381,13 @@ export default function OnboardPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function OnboardPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-spin h-8 w-8 rounded-full border-2 border-primary border-t-transparent" /></div>}>
+      <OnboardContent />
+    </Suspense>
   );
 }

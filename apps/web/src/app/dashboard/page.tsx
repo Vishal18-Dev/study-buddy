@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { get, post, patch } from '@/lib/fetcher';
 import { daysUntil, formatMins, cn } from '@/lib/utils';
+import { usePlan } from '@/components/providers/PlanContext';
 import type { DashboardData, Topic } from '@/lib/types';
 
 /** Simple inline video-link card shown under each topic */
@@ -59,6 +60,7 @@ function StatCard({ label, value, sub, icon: Icon, accent }: {
 export default function DashboardPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const { plans } = usePlan();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [checkInDone, setCheckInDone] = useState(false);
@@ -246,7 +248,17 @@ export default function DashboardPage() {
           <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")" }} />
           <div className="relative">
             <p className="text-white/70 text-sm font-medium">{greeting}, {firstName}</p>
-            <h1 className="text-2xl font-bold mt-1 mb-4">{plan.subject}</h1>
+            <div className="flex items-center justify-between mt-1 mb-4">
+              <h1 className="text-2xl font-bold">{plan.subject}</h1>
+              {plans.length > 1 && (
+                <button
+                  onClick={() => router.push('/plans')}
+                  className="text-[10px] font-semibold text-white/60 hover:text-white/90 transition-colors bg-white/10 hover:bg-white/20 px-2.5 py-1 rounded-full"
+                >
+                  Switch plan
+                </button>
+              )}
+            </div>
 
             <div className="flex flex-wrap gap-3 mb-5">
               <div className="flex items-center gap-1.5 bg-white/15 rounded-full px-3 py-1 text-xs font-semibold">

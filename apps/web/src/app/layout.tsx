@@ -6,6 +6,7 @@ import "@/lib/env";
 import { AuthProvider } from "@/components/providers/AuthProvider";
 import { ToastProvider } from "@/components/ui/toast-provider";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
+import { PlanProvider } from "@/components/providers/PlanContext";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
@@ -40,9 +41,11 @@ export default function RootLayout({
       <body className="min-h-screen bg-background font-sans antialiased">
         <ThemeProvider>
           <AuthProvider>
-            <ToastProvider>
-              {children}
-            </ToastProvider>
+            <PlanProvider>
+              <ToastProvider>
+                {children}
+              </ToastProvider>
+            </PlanProvider>
           </AuthProvider>
         </ThemeProvider>
         <Analytics />
