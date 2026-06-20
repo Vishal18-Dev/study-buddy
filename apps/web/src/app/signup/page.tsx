@@ -3,6 +3,7 @@ import { useState, Suspense } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { BookOpen, Mail, Lock, User, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -66,11 +67,15 @@ function SignupForm() {
         </div>
 
         <div className="flex justify-center mb-8">
-          <Link href="/" className="flex items-center gap-2 hover:opacity-85 transition-opacity">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/20">
-              <BookOpen className="h-6 w-6 text-primary" />
-            </div>
-            <span className="text-2xl font-bold gradient-text">StudyBuddy AI</span>
+          <Link href="/" className="flex items-center gap-2.5 hover:opacity-85 transition-opacity">
+            <Image 
+              src="/unslump-icon-gradient.svg"
+              alt="Unslump Logo"
+              width={40}
+              height={40}
+              className="w-10 h-10 object-contain"
+            />
+            <span className="text-2xl font-bold gradient-text">Unslump AI</span>
           </Link>
         </div>
 

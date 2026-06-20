@@ -41,7 +41,7 @@ router.post('/create', async (req: Request, res: Response, next: NextFunction) =
 
     if (!userId) {
       // Create a unique guest user to temporarily own the plan
-      const guestEmail = `guest-${crypto.randomUUID()}@studybuddy.com`;
+      const guestEmail = `guest-${crypto.randomUUID()}@unslump.com`;
       const guest = await prisma.user.create({
         data: {
           email: guestEmail,
@@ -203,7 +203,7 @@ router.post('/:planId/claim', authMiddleware, async (req: Request, res: Response
     // Clean up temporary guest user if applicable
     if (
       currentOwner &&
-      (currentOwner.email.startsWith('guest-') || currentOwner.email === 'guest@studybuddy.com')
+      (currentOwner.email.startsWith('guest-') || currentOwner.email === 'guest@studybuddy.com' || currentOwner.email === 'guest@unslump.com')
     ) {
       await prisma.user.delete({
         where: { id: currentOwner.id },

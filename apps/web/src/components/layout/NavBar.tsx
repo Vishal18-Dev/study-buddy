@@ -1,5 +1,6 @@
 'use client';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import {
@@ -35,24 +36,32 @@ export function NavBar() {
   return (
     <>
       {/* Mobile top bar */}
-      <header className="lg:hidden h-14 bg-white border-b border-border flex items-center justify-between px-5 sticky top-0 z-40 shadow-sm">
+      <header className="lg:hidden h-14 bg-white dark:bg-card border-b border-border flex items-center justify-between px-5 sticky top-0 z-40 shadow-sm">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-            <BookOpen className="h-4 w-4 text-white" />
-          </div>
-          <span className="font-bold text-foreground">StudyBuddy</span>
+          <Image 
+            src="/unslump-icon-gradient.svg"
+            alt="Unslump Logo"
+            width={28}
+            height={28}
+            className="w-7 h-7 object-contain"
+          />
+          <span className="font-bold text-foreground animate-slide-in">Unslump</span>
         </div>
       </header>
 
       {/* Desktop sidebar */}
-      <aside className="hidden lg:flex flex-col w-60 min-h-screen bg-white border-r border-border p-5 fixed left-0 top-0 shadow-sm">
+      <aside className="hidden lg:flex flex-col w-60 min-h-screen bg-white dark:bg-card border-r border-border p-5 fixed left-0 top-0 shadow-sm">
         {/* Logo */}
         <div className="flex items-center gap-3 mb-8">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
-            <BookOpen className="h-4.5 w-4.5 text-white" />
-          </div>
+          <Image 
+            src="/unslump-icon-gradient.svg"
+            alt="Unslump Logo"
+            width={32}
+            height={32}
+            className="w-8 h-8 object-contain"
+          />
           <div>
-            <span className="text-base font-bold text-foreground">StudyBuddy</span>
+            <span className="text-base font-bold text-foreground">Unslump</span>
             <span className="block text-[10px] text-muted-foreground font-medium tracking-wide uppercase">AI</span>
           </div>
         </div>

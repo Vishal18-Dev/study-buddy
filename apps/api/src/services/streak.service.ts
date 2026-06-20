@@ -11,7 +11,7 @@ export interface StreakUpdateResult {
 
 const STREAK_MILESTONES: Record<number, string> = {
   3: "Most students quit before Day 3. You did not.",
-  7: "One week strong. You are in the top 20% of StudyBuddy users.",
+  7: "One week strong. You are in the top 20% of Unslump users.",
   14: "Two weeks. This is a solid habit now.",
   30: "30 days. You are unstoppable.",
 };

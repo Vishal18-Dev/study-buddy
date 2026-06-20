@@ -43,7 +43,7 @@ export default function PlanPage() {
         setMessages([
           {
             role: 'assistant',
-            text: `Hi! I am your StudyBuddy Plan Adjuster. Need to change anything? Tell me in plain English!\n\nExamples:\n• "Add biochem exercises to Day 3"\n• "Delete photosynthesis from Day 2"\n• "Extend my plan to 45 days"\n• "I have 3 hours on weekends and 1 hour on weekdays"`
+            text: `Hi! I am your Unslump Plan Adjuster. Need to change anything? Tell me in plain English!\n\nExamples:\n• "Add biochem exercises to Day 3"\n• "Delete photosynthesis from Day 2"\n• "Extend my plan to 45 days"\n• "I have 3 hours on weekends and 1 hour on weekdays"`
           }
         ]);
       }
@@ -307,7 +307,7 @@ export default function PlanPage() {
                   <Input
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
-                    placeholder="Ask StudyBuddy to change your plan..."
+                    placeholder="Ask Unslump to change your plan..."
                     disabled={chatLoading}
                     className="rounded-xl border border-border focus-visible:ring-primary shadow-inner bg-background"
                   />

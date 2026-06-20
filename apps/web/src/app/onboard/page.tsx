@@ -2,6 +2,7 @@
 // force rebuild
 import { useState, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Send, Upload, ArrowRight, BookOpen, ArrowLeft } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
@@ -100,7 +101,7 @@ const knowledgeMap: Record<string, KnowledgeLevel> = {
 export default function OnboardPage() {
   const { data: session, status } = useSession();
   const [messages, setMessages] = useState<Message[]>([
-    { role: 'bot', text: "Hi! I'm StudyBuddy. Let's build your personalised study plan — it only takes 2 minutes. " + QUESTIONS[0].text },
+    { role: 'bot', text: "Hi! I'm Unslump. Let's build your personalised study plan — it only takes 2 minutes. " + QUESTIONS[0].text },
   ]);
   const [step, setStep] = useState(0);
   const [input, setInput] = useState('');
@@ -218,9 +219,15 @@ export default function OnboardPage() {
               Exit
             </Link>
             <div className="h-4 w-px bg-border" />
-            <Link href="/" className="flex items-center gap-2 hover:opacity-85 transition-opacity">
-              <BookOpen className="h-5 w-5 text-primary" />
-              <span className="font-bold gradient-text">StudyBuddy AI</span>
+            <Link href="/" className="flex items-center gap-2.5 hover:opacity-85 transition-opacity">
+              <Image 
+                src="/unslump-icon-gradient.svg"
+                alt="Unslump Logo"
+                width={20}
+                height={20}
+                className="w-5 h-5 object-contain"
+              />
+              <span className="font-bold gradient-text">Unslump AI</span>
             </Link>
           </div>
           <span className="text-xs text-muted-foreground">Step {Math.min(step + 1, QUESTIONS.length)} of {QUESTIONS.length}</span>

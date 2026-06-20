@@ -120,7 +120,7 @@ export async function generateStudyPlan(
     return generateLocalMockPlan(params);
   }
 
-  const prompt = `You are StudyBuddy, an expert study planner. You create realistic, day-by-day study plans.
+  const prompt = `You are Unslump, an expert study planner. You create realistic, day-by-day study plans.
 You MUST respond with valid JSON only. No markdown, no explanation, no code blocks — just the raw JSON object.
 
 Create a study plan with this EXACT structure:
@@ -229,7 +229,7 @@ export async function generateCheckInMessage(params: {
   topicsToday: number;
   contextNote?: string;
 }): Promise<string> {
-  const prompt = `You are StudyBuddy, a warm and non-judgmental study companion. Keep messages under 3 sentences.
+  const prompt = `You are Unslump, a warm and non-judgmental study companion. Keep messages under 3 sentences.
 Never shame the student. Always end with a concrete next step or question.
 Use "we" language ("Let's figure out today's plan") not "you failed".
 Do NOT use more than one exclamation mark per message.
@@ -288,7 +288,7 @@ export async function adjustStudyPlan(
     .map((m) => `${m.role.toUpperCase()}: ${m.text}`)
     .join('\n');
 
-  const prompt = `You are StudyBuddy, an expert study planner. You modify existing study plans based on student requests.
+  const prompt = `You are Unslump, an expert study planner. You modify existing study plans based on student requests.
 You MUST respond with valid JSON only. No markdown, no explanation, no code blocks — just raw JSON.
 
 Return the modified study plan with this EXACT structure:
@@ -360,7 +360,7 @@ export async function generateChatResponse(params: {
     .map((doc) => `Document: "${doc.title}"\nContent:\n${doc.content || 'No content'}`)
     .join('\n\n');
 
-  const prompt = `You are StudyBuddy, a professional, encouraging, and clear AI study tutor.
+  const prompt = `You are Unslump, a professional, encouraging, and clear AI study tutor.
 You help students with their queries, explain complex concepts, and guide them in their syllabus.
 IMPORTANT: You must NOT use any emojis in your response. Keep your tone professional, academic, yet supportive and friendly.
 

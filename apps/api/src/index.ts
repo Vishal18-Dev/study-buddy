@@ -95,7 +95,7 @@ app.use(errorMiddleware);
 
 // ── Start server ───────────────────────────────
 app.listen(PORT, () => {
-  console.log(`\n🚀 StudyBuddy API running on http://localhost:${PORT}`);
+  console.log(`\n🚀 Unslump API running on http://localhost:${PORT}`);
   console.log(`   Health: http://localhost:${PORT}/health\n`);
 
   // Start background cron jobs

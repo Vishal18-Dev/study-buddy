@@ -71,10 +71,14 @@ export default function LandingPage() {
       <header className="glass border-b border-border/40 sticky top-0 z-40 transition-colors duration-300">
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/15 border border-primary/20">
-              <BookOpen className="h-5 w-5 text-primary" />
-            </div>
-            <span className="text-lg font-bold gradient-text">StudyBuddy AI</span>
+            <Image 
+              src="/unslump-icon-gradient.svg"
+              alt="Unslump Logo"
+              width={32}
+              height={32}
+              className="w-8 h-8 object-contain"
+            />
+            <span className="text-lg font-bold gradient-text">Unslump AI</span>
           </div>
           <div className="flex items-center gap-3">
             <ThemeToggle />
@@ -177,10 +181,10 @@ export default function LandingPage() {
 
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold tracking-tight mb-4">
-            Experience the <span className="gradient-text">StudyBuddy Interface</span>
+            Experience the <span className="gradient-text">Unslump Interface</span>
           </h2>
           <p className="text-muted-foreground max-w-xl mx-auto">
-            Interact with this live mock simulator to see how StudyBuddy structures your topics, tracks consistency, and tests your memory.
+            Interact with this live mock simulator to see how Unslump structures your topics, tracks consistency, and tests your memory.
           </p>
         </div>
 
@@ -417,15 +421,21 @@ export default function LandingPage() {
 
       {/* Footer */}
       <footer className="border-t border-border/50 py-10 text-center text-sm text-muted-foreground transition-colors duration-300">
-        <div className="flex items-center justify-center gap-2 mb-3">
-          <BookOpen className="h-5 w-5 text-primary" />
-          <span className="font-bold text-foreground">StudyBuddy AI</span>
+        <div className="flex items-center justify-center gap-2.5 mb-3">
+          <Image 
+            src="/unslump-icon-gradient.svg"
+            alt="Unslump Logo"
+            width={28}
+            height={28}
+            className="w-7 h-7 object-contain"
+          />
+          <span className="font-bold text-foreground">Unslump AI</span>
         </div>
         <p className="max-w-xs mx-auto text-xs text-muted-foreground leading-relaxed">
           Crafted for high-performing students who values consistency over cramming.
         </p>
         <div className="mt-6 text-xs border-t border-border/30 pt-6 max-w-sm mx-auto">
-          © {new Date().getFullYear()} StudyBuddy. All rights reserved.
+          © {new Date().getFullYear()} Unslump. All rights reserved.
         </div>
       </footer>
     </div>
