@@ -99,11 +99,26 @@ export default function QuizPage() {
   if (loading || submitting) {
     return (
       <AppShell>
-        <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-          <div className="h-10 w-10 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-          <p className="text-muted-foreground text-sm">
-            {loading ? 'Generating quiz questions...' : 'Submitting your answers...'}
-          </p>
+        <div className="max-w-xl mx-auto space-y-6 animate-pulse">
+          {/* Header skeleton */}
+          <div className="space-y-2">
+            <div className="h-4 w-32 bg-secondary/40 dark:bg-card/40 rounded" />
+            <div className="h-2 w-full bg-secondary/20 dark:bg-card/20 rounded-full" />
+          </div>
+
+          {/* Quiz card skeleton */}
+          <div className="border border-border/30 bg-secondary/10 dark:bg-card/10 rounded-2xl p-6 space-y-6">
+            <div className="space-y-2">
+              <div className="h-5 bg-secondary/40 dark:bg-card/40 rounded w-5/6" />
+              <div className="h-5 bg-secondary/40 dark:bg-card/40 rounded w-2/3" />
+            </div>
+
+            <div className="space-y-3">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="h-12 bg-secondary/20 dark:bg-card/20 rounded-xl border border-border/20" />
+              ))}
+            </div>
+          </div>
         </div>
       </AppShell>
     );
@@ -127,7 +142,7 @@ export default function QuizPage() {
     return (
       <AppShell>
         <div className="max-w-xl mx-auto space-y-6 animate-fade-up">
-          <Card className={cn('p-8 text-center', result.passed ? 'border-green-500/30' : 'border-yellow-500/30')}>
+          <Card glow={true} className={cn('p-8 text-center', result.passed ? 'border-green-500/30' : 'border-yellow-500/30')}>
             <div className="flex justify-center mb-4">
               {result.passed ? (
                 <CheckCircle2 className="h-16 w-16 text-green-400" />
@@ -174,7 +189,7 @@ export default function QuizPage() {
         </div>
 
         {/* Question */}
-        <Card className="animate-slide-in" key={currentQ}>
+        <Card glow={true} className="animate-slide-in" key={currentQ}>
           <CardHeader>
             <p className="text-lg font-semibold leading-relaxed">{q.question}</p>
           </CardHeader>

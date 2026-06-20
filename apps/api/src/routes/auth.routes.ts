@@ -71,7 +71,7 @@ router.post('/register', async (req: Request, res: Response, next: NextFunction)
         // If the old owner was a temporary guest account, delete it to clean up DB
         if (
           currentOwner &&
-          (currentOwner.email.startsWith('guest-') || currentOwner.email === 'guest@studybuddy.com')
+          (currentOwner.email.startsWith('guest-') || currentOwner.email === 'guest@studybuddy.com' || currentOwner.email === 'guest@unslump.com')
         ) {
           await prisma.user.delete({
             where: { id: currentOwner.id },

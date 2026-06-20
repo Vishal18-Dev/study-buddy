@@ -36,8 +36,21 @@ export default function ProgressPage() {
   if (loading) {
     return (
       <AppShell>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="h-10 w-10 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+        <div className="space-y-8 animate-pulse">
+          <div className="space-y-2">
+            <div className="h-7 w-32 bg-secondary/40 dark:bg-card/40 rounded" />
+            <div className="h-4 w-48 bg-secondary/30 dark:bg-card/30 rounded" />
+          </div>
+
+          <div className="grid sm:grid-cols-2 gap-6">
+            {/* Syllabus card skeleton */}
+            <div className="h-64 bg-secondary/20 dark:bg-card/20 rounded-2xl border border-border/20" />
+            {/* Streak card skeleton */}
+            <div className="h-64 bg-secondary/20 dark:bg-card/20 rounded-2xl border border-border/20" />
+          </div>
+
+          {/* Activity heatmap skeleton */}
+          <div className="h-32 bg-secondary/20 dark:bg-card/20 rounded-2xl border border-border/20" />
         </div>
       </AppShell>
     );
@@ -77,7 +90,7 @@ export default function ProgressPage() {
         {/* Streak + coverage row */}
         <div className="grid sm:grid-cols-2 gap-6">
           {/* Coverage donut */}
-          <Card>
+          <Card glow={true}>
             <CardHeader>
               <CardTitle className="text-base">Syllabus Coverage</CardTitle>
             </CardHeader>
@@ -116,7 +129,7 @@ export default function ProgressPage() {
           </Card>
 
           {/* Streak card */}
-          <Card>
+          <Card glow={true}>
             <CardHeader>
               <CardTitle className="text-base">Streak Stats</CardTitle>
             </CardHeader>
@@ -135,8 +148,8 @@ export default function ProgressPage() {
           </Card>
         </div>
 
-        {/* Streak heatmap */}
-        <Card>
+         {/* Streak heatmap */}
+        <Card glow={true}>
           <CardHeader>
             <CardTitle className="text-base">Activity — Last 30 Days</CardTitle>
           </CardHeader>
@@ -163,7 +176,7 @@ export default function ProgressPage() {
 
         {/* Quiz performance */}
         {quizData.length > 0 && (
-          <Card>
+          <Card glow={true}>
             <CardHeader>
               <CardTitle className="text-base">Quiz Performance by Topic</CardTitle>
             </CardHeader>

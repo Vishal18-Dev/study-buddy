@@ -1,13 +1,16 @@
 'use client';
 // force rebuild
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, Suspense } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Send, Upload, ArrowRight, BookOpen, ArrowLeft } from 'lucide-react';
 import { useSession } from 'next-auth/react';
+import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { post } from '@/lib/fetcher';
+import { usePlan } from '@/components/providers/PlanContext';
 import type { Plan } from '@/lib/types';
 
 type Message = { role: 'bot' | 'user'; text: string };
@@ -32,15 +35,50 @@ const QUESTIONS = [
 ];
 
 function parseExamDate(input: string): string {
-  if (/in\s+\d+\s+days?/i.test(input)) {
-    const days = parseInt(input.match(/(\d+)/)?.[1] || '30');
+  const cleanInput = input.trim().toLowerCase();
+
+  // 1. Check for "in X days" or just "X days"
+  const daysMatch = cleanInput.match(/(?:in\s+)?(\d+)\s+days?/i);
+  if (daysMatch) {
+    const days = parseInt(daysMatch[1], 10);
     const d = new Date();
     d.setDate(d.getDate() + days);
     return d.toISOString().split('T')[0];
   }
-  const parsed = new Date(input);
-  if (!isNaN(parsed.getTime())) return parsed.toISOString().split('T')[0];
-  // Default: 30 days
+
+  // 2. Remove ordinal suffixes (st, nd, rd, th) from numbers (e.g. "4th of July" -> "4 of July")
+  const ordinalClean = cleanInput.replace(/(\d+)(st|nd|rd|th)\b/gi, '$1');
+
+  // 3. Remove "of" (e.g. "4 of july" -> "4 july")
+  const ofClean = ordinalClean.replace(/\bof\b/gi, '');
+
+  // 4. Check for DD/MM/YYYY or DD-MM-YYYY
+  const dmyMatch = ofClean.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})$/);
+  if (dmyMatch) {
+    const day = parseInt(dmyMatch[1], 10);
+    const month = parseInt(dmyMatch[2], 10) - 1;
+    const year = parseInt(dmyMatch[3], 10);
+    const d = new Date(year, month, day);
+    if (!isNaN(d.getTime())) return d.toISOString().split('T')[0];
+  }
+
+  // 5. Try parsing via native Date, adding current year if missing
+  let parsed = new Date(ofClean);
+  if (isNaN(parsed.getTime())) {
+    const currentYear = new Date().getFullYear();
+    parsed = new Date(`${ofClean} ${currentYear}`);
+  }
+
+  if (!isNaN(parsed.getTime())) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (parsed < today) {
+      parsed.setFullYear(parsed.getFullYear() + 1);
+    }
+    return parsed.toISOString().split('T')[0];
+  }
+
+  // Default fallback: 30 days
   const d = new Date();
   d.setDate(d.getDate() + 30);
   return d.toISOString().split('T')[0];
@@ -62,10 +100,13 @@ const knowledgeMap: Record<string, KnowledgeLevel> = {
   '3': 'REVISION',
 };
 
-export default function OnboardPage() {
+function OnboardContent() {
   const { data: session, status } = useSession();
+  const { refreshPlans } = usePlan();
+  const searchParams = useSearchParams();
+  const fromPlans = searchParams?.get('from') === 'plans';
   const [messages, setMessages] = useState<Message[]>([
-    { role: 'bot', text: "Hi! I'm StudyBuddy. Let's build your personalised study plan — it only takes 2 minutes. " + QUESTIONS[0].text },
+    { role: 'bot', text: "Hi! I'm Unslump. Let's build your personalised study plan — it only takes 2 minutes. " + QUESTIONS[0].text },
   ]);
   const [step, setStep] = useState(0);
   const [input, setInput] = useState('');
@@ -145,6 +186,8 @@ export default function OnboardPage() {
         setPlan(result.plan);
         setPlanSummary(result.summary);
         localStorage.setItem('pendingPlanId', result.plan.id);
+        // Refresh the global plan context so the switcher updates
+        refreshPlans();
 
         setTimeout(() => {
           addBot(`Your plan is ready! Here\'s the overview:\n\n${result.summary}\n\nYou have ${result.plan.days.length} days planned. Save your plan to track progress and access it anytime.`);
@@ -183,9 +226,15 @@ export default function OnboardPage() {
               Exit
             </Link>
             <div className="h-4 w-px bg-border" />
-            <Link href="/" className="flex items-center gap-2 hover:opacity-85 transition-opacity">
-              <BookOpen className="h-5 w-5 text-primary" />
-              <span className="font-bold gradient-text">StudyBuddy AI</span>
+            <Link href="/" className="flex items-center gap-2.5 hover:opacity-85 transition-opacity">
+              <Image 
+                src="/unslump-icon-gradient.svg"
+                alt="Unslump Logo"
+                width={20}
+                height={20}
+                className="w-5 h-5 object-contain"
+              />
+              <span className="font-bold gradient-text">Unslump AI</span>
             </Link>
           </div>
           <span className="text-xs text-muted-foreground">Step {Math.min(step + 1, QUESTIONS.length)} of {QUESTIONS.length}</span>
@@ -252,9 +301,9 @@ export default function OnboardPage() {
                 )}
               </div>
               {status === 'authenticated' ? (
-                <Link href="/dashboard">
+                <Link href="/plans">
                   <Button className="w-full" size="lg">
-                    Go to Dashboard
+                    View All My Plans
                     <ArrowRight className="h-4 w-4" />
                   </Button>
                 </Link>
@@ -332,5 +381,13 @@ export default function OnboardPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function OnboardPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-spin h-8 w-8 rounded-full border-2 border-primary border-t-transparent" /></div>}>
+      <OnboardContent />
+    </Suspense>
   );
 }

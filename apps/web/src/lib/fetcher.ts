@@ -68,3 +68,7 @@ export const patch = <T>(endpoint: string, body: unknown, token?: string) =>
     body: JSON.stringify(body),
     token,
   });
+
+// Helper for DELETE requests
+export const del = <T>(endpoint: string, token?: string) =>
+  fetcher<T>(endpoint, { method: 'DELETE', token });

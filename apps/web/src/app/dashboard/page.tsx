@@ -10,11 +10,11 @@ import {
 import { AppShell } from '@/components/layout/AppShell';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
 import { get, post, patch } from '@/lib/fetcher';
 import { daysUntil, formatMins, cn } from '@/lib/utils';
+import { usePlan } from '@/components/providers/PlanContext';
 import type { DashboardData, Topic } from '@/lib/types';
-
-
 
 /** Simple inline video-link card shown under each topic */
 function VideoCard({ topicId, title }: { topicId: string; title: string }) {
@@ -22,11 +22,11 @@ function VideoCard({ topicId, title }: { topicId: string; title: string }) {
   return (
     <button
       onClick={() => router.push(`/study/${topicId}`)}
-      className="w-full text-left flex items-center gap-2.5 mt-2.5 p-2.5 rounded-lg bg-slate-50 border border-slate-100 hover:bg-primary/5 hover:border-primary/20 transition-all group"
+      className="w-full text-left flex items-center gap-2.5 mt-2.5 p-2.5 rounded-lg bg-slate-50 dark:bg-slate-900/40 border border-slate-100 dark:border-border/30 hover:bg-primary/5 hover:border-primary/20 transition-all group"
       id={`video-card-${topicId}`}
     >
-      <div className="flex h-8 w-8 items-center justify-center rounded-md bg-red-50 shrink-0">
-        <PlayCircle className="h-4 w-4 text-red-600" />
+      <div className="flex h-8 w-8 items-center justify-center rounded-md bg-red-50 dark:bg-red-950/20 shrink-0">
+        <PlayCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
       </div>
       <div className="min-w-0 flex-1">
         <p className="text-xs font-medium text-foreground truncate group-hover:text-primary transition-colors">
@@ -44,7 +44,7 @@ function StatCard({ label, value, sub, icon: Icon, accent }: {
   icon: React.ElementType; accent: string;
 }) {
   return (
-    <div className="card-elevated p-4 flex items-start gap-3">
+    <Card glow={true} className="p-4 flex items-start gap-3 border border-border/40 shadow-md">
       <div className={cn('flex h-10 w-10 items-center justify-center rounded-xl shrink-0', accent)}>
         <Icon className="h-5 w-5" />
       </div>
@@ -53,13 +53,14 @@ function StatCard({ label, value, sub, icon: Icon, accent }: {
         <p className="text-xs text-muted-foreground mt-0.5">{label}</p>
         {sub && <p className="text-[11px] text-muted-foreground mt-0.5">{sub}</p>}
       </div>
-    </div>
+    </Card>
   );
 }
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const { plans } = usePlan();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [checkInDone, setCheckInDone] = useState(false);
@@ -84,36 +85,117 @@ export default function DashboardPage() {
     if (status === 'authenticated') fetchDashboard();
   }, [status, fetchDashboard, router]);
 
+  // Optimistic topic status toggle
   const handleTopicToggle = async (topic: Topic) => {
     if (!session?.accessToken || !data) return;
+    
+    const originalData = { ...data };
     const newStatus = topic.status === 'COMPLETE' ? 'NOT_STARTED' : 'COMPLETE';
+    
+    // Calculate optimistic coverage percentage
+    const updatedTopics = data.todayTopics.map(t => 
+      t.id === topic.id ? { ...t, status: newStatus as 'COMPLETE' | 'NOT_STARTED' } : t
+    );
+    
+    const totalTopicsCount = data.plan?.days?.flatMap(d => d.topics).length || 1;
+    const diff = topic.status === 'COMPLETE' ? -1 : 1;
+    const newCoverage = Math.min(100, Math.max(0, Math.round(data.coveragePercent + (diff / totalTopicsCount * 100))));
+    
+    setData({
+      ...data,
+      todayTopics: updatedTopics,
+      coveragePercent: newCoverage
+    });
+
     try {
       await patch(`/api/topics/${topic.id}/status`, { status: newStatus }, session.accessToken);
-      fetchDashboard();
-    } catch { /* silent */ }
+      fetchDashboard(); // sync silently
+    } catch {
+      // rollback on error
+      setData(originalData);
+    }
   };
 
+  // Optimistic daily habit check-in
   const handleCheckIn = async (flag: string) => {
     if (!session?.accessToken || !data?.plan) return;
     setCheckingIn(true);
+
+    const originalData = { ...data };
+    const originalCheckInDone = checkInDone;
+
+    // Optimistically update streak count and status
+    setCheckInDone(true);
+    if (flag === 'YES' || flag === 'LOGGED_OFFLINE') {
+      setData(prev => {
+        if (!prev) return null;
+        if (!prev.streak) {
+          return {
+            ...prev,
+            streak: {
+              id: 'temp-streak-id',
+              userId: prev.plan?.userId || 'temp-user-id',
+              current: 1,
+              longest: 1,
+              graceDaysUsed: 0,
+              lastCheckIn: new Date().toISOString()
+            }
+          };
+        }
+        return {
+          ...prev,
+          streak: {
+            ...prev.streak,
+            current: prev.streak.current + 1,
+            longest: Math.max(prev.streak.longest, prev.streak.current + 1)
+          }
+        };
+      });
+    }
+
     try {
-      const result = await post<{ milestoneMessage?: string }>(                '/api/checkin',
+      const result = await post<{ milestoneMessage?: string }>(
+        '/api/checkin',
         { planId: data.plan.id, completionFlag: flag, sessionMins: 0 },
         session.accessToken
       );
       if (result.milestoneMessage) setMilestoneMsg(result.milestoneMessage);
-      setCheckInDone(true);
-      fetchDashboard();
-    } catch { /* silent */ } finally { setCheckingIn(false); }
+      fetchDashboard(); // sync silently
+    } catch {
+      // rollback on error
+      setCheckInDone(originalCheckInDone);
+      setData(originalData);
+    } finally {
+      setCheckingIn(false);
+    }
   };
 
+  // Pulse Layout Skeletons
   if (loading) {
     return (
       <AppShell>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="flex flex-col items-center gap-4">
-            <div className="h-10 w-10 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-            <p className="text-sm text-muted-foreground">Loading your dashboard...</p>
+        <div className="space-y-6 animate-pulse">
+          {/* Header banner skeleton */}
+          <div className="h-44 bg-secondary/40 dark:bg-card/40 rounded-2xl border border-border/20" />
+
+          {/* Stats row skeleton */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="h-20 bg-secondary/30 dark:bg-card/30 rounded-xl border border-border/20" />
+            ))}
+          </div>
+
+          {/* Plan card skeleton */}
+          <div className="border border-border/30 bg-secondary/10 dark:bg-card/10 rounded-2xl p-5 space-y-4">
+            <div className="h-5 w-36 bg-secondary/40 dark:bg-card/40 rounded" />
+            <div className="space-y-3">
+              {Array.from({ length: 2 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-3 py-1.5">
+                  <div className="h-5 w-5 rounded-full bg-secondary/40 dark:bg-card/40 shrink-0" />
+                  <div className="h-4 bg-secondary/40 dark:bg-card/40 rounded w-2/3" />
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </AppShell>
@@ -166,7 +248,17 @@ export default function DashboardPage() {
           <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")" }} />
           <div className="relative">
             <p className="text-white/70 text-sm font-medium">{greeting}, {firstName}</p>
-            <h1 className="text-2xl font-bold mt-1 mb-4">{plan.subject}</h1>
+            <div className="flex items-center justify-between mt-1 mb-4">
+              <h1 className="text-2xl font-bold">{plan.subject}</h1>
+              {plans.length > 1 && (
+                <button
+                  onClick={() => router.push('/plans')}
+                  className="text-[10px] font-semibold text-white/60 hover:text-white/90 transition-colors bg-white/10 hover:bg-white/20 px-2.5 py-1 rounded-full"
+                >
+                  Switch plan
+                </button>
+              )}
+            </div>
 
             <div className="flex flex-wrap gap-3 mb-5">
               <div className="flex items-center gap-1.5 bg-white/15 rounded-full px-3 py-1 text-xs font-semibold">
@@ -218,7 +310,7 @@ export default function DashboardPage() {
             label="Day streak"
             value={streak?.current || 0}
             icon={Flame}
-            accent="bg-orange-50 text-orange-500"
+            accent="bg-orange-50 dark:bg-orange-950/20 text-orange-500"
           />
           <StatCard
             label="Days to exam"
@@ -230,30 +322,30 @@ export default function DashboardPage() {
             label="Coverage"
             value={`${coveragePercent}%`}
             icon={BarChart3}
-            accent="bg-teal-50 text-teal-600"
+            accent="bg-teal-50 dark:bg-teal-950/20 text-teal-600"
           />
           <StatCard
             label="Today"
             value={`${completedCount}/${todayTopics.length}`}
             sub="topics done"
             icon={CheckCircle2}
-            accent="bg-emerald-50 text-emerald-600"
+            accent="bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600"
           />
         </div>
 
         {/* ── Check-in prompt ────────────────────────── */}
         {!checkInDone && (
-          <div className="card-elevated p-5">
+          <Card glow={true} className="p-5 border border-border/40 shadow-xl">
             <h2 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
               <Sparkles className="h-4 w-4 text-primary" />
               How did yesterday go?
             </h2>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {[
-                { flag: 'YES',           label: 'Completed it',  color: 'text-emerald-600 hover:bg-emerald-50 hover:border-emerald-200' },
-                { flag: 'PARTIALLY',     label: 'Partially',     color: 'text-amber-600 hover:bg-amber-50 hover:border-amber-200' },
-                { flag: 'NO',            label: 'Missed it',     color: 'text-red-500 hover:bg-red-50 hover:border-red-200' },
-                { flag: 'LOGGED_OFFLINE',label: 'Studied offline',color: 'text-blue-600 hover:bg-blue-50 hover:border-blue-200' },
+                { flag: 'YES',           label: 'Completed it',  color: 'text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 hover:border-emerald-200' },
+                { flag: 'PARTIALLY',     label: 'Partially',     color: 'text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/20 hover:border-amber-200' },
+                { flag: 'NO',            label: 'Missed it',     color: 'text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 hover:border-red-200' },
+                { flag: 'LOGGED_OFFLINE',label: 'Studied offline',color: 'text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/20 hover:border-blue-200' },
               ].map(({ flag, label, color }) => (
                 <button
                   key={flag}
@@ -261,7 +353,7 @@ export default function DashboardPage() {
                   disabled={checkingIn}
                   id={`checkin-${flag.toLowerCase()}`}
                   className={cn(
-                    'py-2.5 px-3 rounded-xl border border-border text-xs font-semibold transition-all duration-150 disabled:opacity-50',
+                    'py-2.5 px-3 rounded-xl border border-border dark:border-border/40 text-xs font-semibold transition-all duration-150 disabled:opacity-50 bg-background',
                     color
                   )}
                 >
@@ -269,11 +361,11 @@ export default function DashboardPage() {
                 </button>
               ))}
             </div>
-          </div>
+          </Card>
         )}
 
         {/* ── Today's plan ───────────────────────────── */}
-        <div className="card-elevated">
+        <Card glow={true} className="border border-border/40 shadow-xl overflow-hidden">
           <div className="flex items-center justify-between px-5 py-4 border-b border-border">
             <h2 className="font-semibold text-foreground flex items-center gap-2">
               <BookOpen className="h-4 w-4 text-primary" />
@@ -305,7 +397,7 @@ export default function DashboardPage() {
                       >
                         {done
                           ? <CheckCircle2 className="h-5 w-5 text-emerald-500" />
-                          : <Circle className="h-5 w-5 text-slate-300 hover:text-primary transition-colors" />
+                          : <Circle className="h-5 w-5 text-slate-300 dark:text-slate-700 hover:text-primary transition-colors" />
                         }
                       </button>
 
@@ -343,26 +435,27 @@ export default function DashboardPage() {
               })}
             </div>
           )}
-        </div>
+        </Card>
 
         {/* ── Daily test card ────────────────────────── */}
-        <div
+        <Card
+          glow={allDone}
           className={cn(
-            'rounded-2xl p-5 border transition-all duration-500',
+            'p-5 border transition-all duration-500 shadow-xl',
             allDone
-              ? 'quiz-unlock-glow bg-emerald-50 border-emerald-200'
-              : 'bg-slate-50 border-border opacity-80'
+              ? 'quiz-unlock-glow bg-emerald-50/50 dark:bg-emerald-950/10 border-emerald-200 dark:border-emerald-500/20'
+              : 'bg-slate-50/50 dark:bg-slate-900/10 border-border/40 opacity-85'
           )}
           id="daily-quiz-card"
         >
           <div className="flex items-center gap-4">
             <div className={cn(
               'flex h-12 w-12 items-center justify-center rounded-xl shrink-0',
-              allDone ? 'bg-emerald-100' : 'bg-slate-200'
+              allDone ? 'bg-emerald-100 dark:bg-emerald-950/30' : 'bg-slate-200 dark:bg-slate-800'
             )}>
               {allDone
-                ? <Trophy className="h-6 w-6 text-emerald-600" />
-                : <Lock className="h-6 w-6 text-slate-400" />
+                ? <Trophy className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+                : <Lock className="h-6 w-6 text-slate-400 dark:text-slate-600" />
               }
             </div>
             <div className="flex-1">
@@ -379,7 +472,7 @@ export default function DashboardPage() {
             {allDone && todayTopics.length > 0 && (
               <Button
                 onClick={() => router.push(`/quiz/${todayTopics[0].id}`)}
-                className="shrink-0 bg-emerald-600 hover:bg-emerald-700"
+                className="shrink-0 bg-emerald-600 hover:bg-emerald-700 text-white"
                 id="take-daily-test-btn"
               >
                 Take test
@@ -395,7 +488,7 @@ export default function DashboardPage() {
                 <span>{completedCount} of {todayTopics.length} topics complete</span>
                 <span>{Math.round((completedCount / todayTopics.length) * 100)}%</span>
               </div>
-              <div className="h-1.5 bg-slate-200 rounded-full overflow-hidden">
+              <div className="h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
                 <div
                   className="h-1.5 bg-primary rounded-full transition-all duration-700"
                   style={{ width: `${(completedCount / todayTopics.length) * 100}%` }}
@@ -403,15 +496,15 @@ export default function DashboardPage() {
               </div>
             </div>
           )}
-        </div>
+        </Card>
 
         {/* ── Recent quiz scores ──────────────────────── */}
         {recentQuizScores.length > 0 && (
-          <div className="card-elevated p-5">
+          <Card glow={true} className="p-5 border border-border/40 shadow-xl">
             <h2 className="font-semibold text-sm text-foreground mb-3">Recent Quiz Scores</h2>
             <div className="space-y-2">
               {recentQuizScores.slice(0, 4).map((r, i) => (
-                <div key={i} className="flex items-center justify-between py-1.5 border-b border-border/60 last:border-0">
+                <div key={i} className="flex items-center justify-between py-1.5 border-b border-border/60 dark:border-border/30 last:border-0">
                   <span className="text-sm text-foreground truncate flex-1 mr-3">{r.topicTitle}</span>
                   <Badge
                     variant={r.passed ? 'success' : 'warning'}
@@ -422,7 +515,7 @@ export default function DashboardPage() {
                 </div>
               ))}
             </div>
-          </div>
+          </Card>
         )}
 
       </div>

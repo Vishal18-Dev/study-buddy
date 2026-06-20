@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 110" width="420" height="110">
+  <rect width="420" height="110" fill="#100C2E"/>
+  <g transform="translate(20,28)">
+    <rect x="0" y="40" width="56" height="12" rx="6" fill="#5B8DEF" opacity="0.28"/>
+    <rect x="11" y="21" width="47" height="12" rx="6" fill="#5B8DEF" opacity="0.65"/>
+    <rect x="24" y="2" width="38" height="12" rx="6" fill="#FFFFFF" opacity="1"/>
+  </g>
+  <text x="110" y="68" font-family="Arial, sans-serif" font-size="46" font-weight="300" fill="#9C97E8" letter-spacing="-2">un<tspan font-weight="800" fill="#FFFFFF">slump</tspan></text>
+  <text x="112" y="93" font-family="Arial, sans-serif" font-size="13.5" fill="#6E68C2" letter-spacing="0.4">get back on track, every day</text>
+</svg>

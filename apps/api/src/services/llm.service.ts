@@ -120,7 +120,7 @@ export async function generateStudyPlan(
     return generateLocalMockPlan(params);
   }
 
-  const prompt = `You are StudyBuddy, an expert study planner. You create realistic, day-by-day study plans.
+  const prompt = `You are Unslump, an expert study planner. You create realistic, day-by-day study plans.
 You MUST respond with valid JSON only. No markdown, no explanation, no code blocks — just the raw JSON object.
 
 Create a study plan with this EXACT structure:
@@ -229,7 +229,7 @@ export async function generateCheckInMessage(params: {
   topicsToday: number;
   contextNote?: string;
 }): Promise<string> {
-  const prompt = `You are StudyBuddy, a warm and non-judgmental study companion. Keep messages under 3 sentences.
+  const prompt = `You are Unslump, a warm and non-judgmental study companion. Keep messages under 3 sentences.
 Never shame the student. Always end with a concrete next step or question.
 Use "we" language ("Let's figure out today's plan") not "you failed".
 Do NOT use more than one exclamation mark per message.
@@ -288,7 +288,7 @@ export async function adjustStudyPlan(
     .map((m) => `${m.role.toUpperCase()}: ${m.text}`)
     .join('\n');
 
-  const prompt = `You are StudyBuddy, an expert study planner. You modify existing study plans based on student requests.
+  const prompt = `You are Unslump, an expert study planner. You modify existing study plans based on student requests.
 You MUST respond with valid JSON only. No markdown, no explanation, no code blocks — just raw JSON.
 
 Return the modified study plan with this EXACT structure:
@@ -360,7 +360,7 @@ export async function generateChatResponse(params: {
     .map((doc) => `Document: "${doc.title}"\nContent:\n${doc.content || 'No content'}`)
     .join('\n\n');
 
-  const prompt = `You are StudyBuddy, a professional, encouraging, and clear AI study tutor.
+  const prompt = `You are Unslump, a professional, encouraging, and clear AI study tutor.
 You help students with their queries, explain complex concepts, and guide them in their syllabus.
 IMPORTANT: You must NOT use any emojis in your response. Keep your tone professional, academic, yet supportive and friendly.
 
@@ -383,6 +383,48 @@ Please reply directly to the student's message. Explain any concepts clearly. Re
   } catch (err) {
     console.error('❌ [LLM] Chat generation failed. Using fallback message.', err);
     return fallbackMsg;
+  }
+}
+
+async function validateAndCleanUrl(url: string, platform: string, title: string): Promise<string> {
+  const cleanPlatform = (platform || 'OpenSource').toLowerCase();
+  
+  const getSearchFallback = () => {
+    const q = encodeURIComponent(title);
+    if (cleanPlatform === 'coursera') return `https://www.coursera.org/search?query=${q}`;
+    if (cleanPlatform === 'udemy') return `https://www.udemy.com/courses/search/?q=${q}`;
+    if (cleanPlatform === 'youtube') return `https://www.youtube.com/results?search_query=${q}`;
+    if (cleanPlatform === 'simplilearn') return `https://www.simplilearn.com/search?q=${q}`;
+    return `https://www.google.com/search?q=${q}`;
+  };
+
+  if (!url || !url.startsWith('http')) {
+    return getSearchFallback();
+  }
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 2000); // 2-second timeout
+
+    const res = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36'
+      },
+      signal: controller.signal
+    });
+    
+    clearTimeout(timeoutId);
+
+    if (res.status === 404) {
+      console.warn(`⚠️ [URL Validator] Dead link detected (404): ${url}. Falling back to search...`);
+      return getSearchFallback();
+    }
+
+    return url;
+  } catch (err) {
+    console.warn(`⚠️ [URL Validator] Failed to connect to ${url}. Falling back to search...`);
+    return getSearchFallback();
   }
 }
 
@@ -429,6 +471,7 @@ export async function generateRecommendationsForTopic(
 
   const prompt = `You are a learning resource curator. Suggest exactly 4 high-quality resources (articles, courses, or videos) for the topic: "${topicTitle}" in the subject: "${subject}".
 Include a mix of free open-source resources (like YouTube or open tutorials) and paid platforms (like Coursera, Udemy, or Simplilearn).
+Since you have Google Search Grounding enabled, search the web to find real, active, and working URLs. DO NOT make up, guess, or hallucinate URLs. Only include URLs that you verified exist and are active.
 Respond with valid JSON only. No markdown, no code blocks, no explanation.
 
 Respond with this EXACT structure:
@@ -441,20 +484,28 @@ Respond with this EXACT structure:
   }
 ]
 
-Allowed platforms: "YouTube", "Coursera", "Udemy", "Simplilearn", "OpenSource".
-Make sure the URLs are realistic search or course URLs for the topic.`;
+Allowed platforms: "YouTube", "Coursera", "Udemy", "Simplilearn", "OpenSource".`;
 
   try {
     const raw = await generateTextWithFallback(prompt, { json: true });
     const jsonStr = extractJson(raw);
     const parsed = JSON.parse(jsonStr);
     if (Array.isArray(parsed) && parsed.length > 0) {
-      return parsed.map((item: any) => ({
-        title: item.title || `${topicTitle} Resource`,
-        url: item.url || `https://www.google.com/search?q=${encodeURIComponent(topicTitle)}`,
-        isPaid: !!item.isPaid,
-        platform: item.platform || 'OpenSource'
-      }));
+      const resolved = await Promise.all(
+        parsed.map(async (item: any) => {
+          const rawUrl = item.url || `https://www.google.com/search?q=${encodeURIComponent(item.title || topicTitle)}`;
+          const platform = item.platform || 'OpenSource';
+          const title = item.title || `${topicTitle} Resource`;
+          const url = await validateAndCleanUrl(rawUrl, platform, title);
+          return {
+            title,
+            url,
+            isPaid: !!item.isPaid,
+            platform
+          };
+        })
+      );
+      return resolved;
     }
     return mockRecommendations;
   } catch (err) {
@@ -511,4 +562,196 @@ Response structure:
     return fallback;
   }
 }
+
+async function scrapeYoutubeFallback(
+  topicTitle: string,
+  subject: string
+): Promise<{ videoId: string; title: string; duration: string; relevanceExplanation: string }[]> {
+  const query = `${topicTitle} ${subject} tutorial`;
+  const fallbackVideos = [
+    {
+      videoId: 'EcCTIExsqmI',
+      title: `${topicTitle} - Core Concepts Explained`,
+      duration: '12:00',
+      relevanceExplanation: 'Highly rated and relevant explanation for this subject (Fallback resource).'
+    }
+  ];
+
+  try {
+    const searchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
+    const res = await fetch(searchUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36'
+      }
+    });
+    const html = await res.text();
+    const startToken = 'var ytInitialData = ';
+    const endToken = ';</script>';
+    const startIndex = html.indexOf(startToken);
+    if (startIndex === -1) {
+      throw new Error('Could not find ytInitialData in HTML');
+    }
+    
+    const jsonStart = startIndex + startToken.length;
+    const endIndex = html.indexOf(endToken, jsonStart);
+    const jsonStr = html.substring(jsonStart, endIndex);
+    const data = JSON.parse(jsonStr);
+    
+    const contents = data.contents?.twoColumnSearchResultsRenderer?.primaryContents?.sectionListRenderer?.contents;
+    if (!contents) {
+      throw new Error('No contents found in ytInitialData');
+    }
+    
+    const videos: { videoId: string; title: string; duration: string; relevanceExplanation: string }[] = [];
+    for (const section of contents) {
+      const itemSection = section.itemSectionRenderer;
+      if (itemSection?.contents) {
+        for (const item of itemSection.contents) {
+          if (item.videoRenderer) {
+            const v = item.videoRenderer;
+            const videoId = v.videoId;
+            if (!videoId) continue;
+            const title = v.title?.runs?.[0]?.text || `${topicTitle} Tutorial`;
+            const lengthText = v.lengthText?.simpleText || '12:00';
+            const viewsText = v.viewCountText?.simpleText || 'Highly viewed';
+            const channelName = v.ownerText?.runs?.[0]?.text || 'Educational Creator';
+            
+            videos.push({
+              videoId,
+              title,
+              duration: lengthText,
+              relevanceExplanation: `Curated video with high community approval (${viewsText}) by channel "${channelName}". Programmatically matched fallback.`
+            });
+            
+            if (videos.length >= 5) break;
+          }
+        }
+      }
+      if (videos.length >= 5) break;
+    }
+    
+    if (videos.length > 0) return videos;
+    return fallbackVideos;
+  } catch (err) {
+    console.error('⚠️ [YouTube Fallback Scraper] failed:', err);
+    return fallbackVideos;
+  }
+}
+
+async function resolveRealVideoId(title: string, fallbackId: string): Promise<string> {
+  try {
+    const searchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(title)}`;
+    const res = await fetch(searchUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36'
+      }
+    });
+    const html = await res.text();
+    const startToken = 'var ytInitialData = ';
+    const endToken = ';</script>';
+    const startIndex = html.indexOf(startToken);
+    if (startIndex === -1) return fallbackId;
+
+    const jsonStart = startIndex + startToken.length;
+    const endIndex = html.indexOf(endToken, jsonStart);
+    const jsonStr = html.substring(jsonStart, endIndex);
+    const data = JSON.parse(jsonStr);
+
+    const contents = data.contents?.twoColumnSearchResultsRenderer?.primaryContents?.sectionListRenderer?.contents;
+    if (!contents) return fallbackId;
+
+    for (const section of contents) {
+      const itemSection = section.itemSectionRenderer;
+      if (itemSection?.contents) {
+        for (const item of itemSection.contents) {
+          if (item.videoRenderer) {
+            const v = item.videoRenderer;
+            const videoId = v.videoId;
+            if (videoId) {
+              return videoId;
+            }
+          }
+        }
+      }
+    }
+    return fallbackId;
+  } catch (err) {
+    console.error(`⚠️ [resolveRealVideoId] Failed to resolve video for "${title}":`, err);
+    return fallbackId;
+  }
+}
+
+export async function searchYoutubeVideosWithGemini(
+  topicTitle: string,
+  subject: string,
+  syllabusContext?: string
+): Promise<{ videoId: string; title: string; duration: string; relevanceExplanation: string }[]> {
+  const geminiApiKey = process.env.GEMINI_API_KEY || '';
+  const openaiApiKey = process.env.OPENAI_API_KEY || '';
+
+  if (
+    (!geminiApiKey || geminiApiKey === 'your-gemini-api-key-here') &&
+    (!openaiApiKey || openaiApiKey === 'your-openai-api-key-here')
+  ) {
+    console.log('⚡ [LLM] No API key configured. Calling YouTube fallback scraper...');
+    return scrapeYoutubeFallback(topicTitle, subject);
+  }
+
+  const prompt = `You are a learning content recommendation engine.
+Find the 5 best YouTube video tutorials for studying the topic "${topicTitle}" in the subject "${subject}".
+Syllabus / Context details: ${syllabusContext || 'None provided'}
+
+Your goals:
+1. Target videos that have high view counts (implying popularity and community approval).
+2. Choose videos that have highly positive comments (users finding it clear and helpful).
+3. Select videos with excellent transcript quality matching what the student needs to learn.
+4. Ensure relevance to the target curriculum (e.g. if the subject indicates an Indian Entrance Exam like JEE, NEET, UPSC, etc., prioritize Indian educators/context).
+
+For each of the 5 videos, find or generate:
+- The actual YouTube videoId (a valid 11-character ID, e.g. "dQw4w9WgXcQ", "EcCTIExsqmI" or any real tutorial ID you can query via search).
+- The video title.
+- The video duration (e.g. "12:30").
+- A brief relevanceExplanation explaining why this video is recommended (mentioning view range, comments, and direct curriculum relevance).
+
+Respond with valid JSON only. No markdown, no code blocks, no explanation.
+
+Respond with this EXACT structure:
+[
+  {
+    "videoId": "11-char-id",
+    "title": "Video Title",
+    "duration": "10:15",
+    "relevanceExplanation": "Why this video is relevant..."
+  }
+]`;
+
+  try {
+    const raw = await generateTextWithFallback(prompt, { json: true });
+    const jsonStr = extractJson(raw);
+    const parsed = JSON.parse(jsonStr);
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      const resolved = await Promise.all(
+        parsed.map(async (item: any) => {
+          const rawId = item.videoId || 'EcCTIExsqmI';
+          const title = item.title || `${topicTitle} Tutorial`;
+          // Resolve the actual video ID programmatically to ensure it works
+          const videoId = await resolveRealVideoId(title, rawId);
+          return {
+            videoId,
+            title,
+            duration: item.duration || '12:00',
+            relevanceExplanation: item.relevanceExplanation || 'Directly relevant to your syllabus.'
+          };
+        })
+      );
+      return resolved;
+    }
+    console.warn('⚡ [LLM] Returned invalid video search response structure. Calling fallback scraper...');
+    return scrapeYoutubeFallback(topicTitle, subject);
+  } catch (err) {
+    console.error('❌ [LLM] YouTube video search with Gemini failed. Calling fallback scraper...', err);
+    return scrapeYoutubeFallback(topicTitle, subject);
+  }
+}
+
 

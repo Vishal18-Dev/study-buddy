@@ -8,6 +8,7 @@ const router = Router();
 router.get('/', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = req.user!.userId;
+    const { planId } = req.query as { planId?: string };
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const todayEnd = new Date();
@@ -16,7 +17,9 @@ router.get('/', authMiddleware, async (req: Request, res: Response, next: NextFu
     // Fetch all data in parallel
     const [plan, streak, recentQuizResults, todayCheckIn] = await Promise.all([
       prisma.plan.findFirst({
-        where: { userId, status: 'ACTIVE' },
+        where: planId
+          ? { id: planId, userId }
+          : { userId, status: 'ACTIVE' },
         include: {
           days: { include: { topics: true }, orderBy: { dayNumber: 'asc' } },
         },
