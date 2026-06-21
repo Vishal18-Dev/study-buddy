@@ -1,23 +1,20 @@
 'use client';
 import { useState, Suspense } from 'react';
 import { signIn } from 'next-auth/react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { BookOpen, Mail, Lock, User, ArrowLeft } from 'lucide-react';
+import { Mail, Lock, User, ArrowLeft, GraduationCap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { post } from '@/lib/fetcher';
 
-function SignupForm() {
+function TeacherSignupForm() {
   const router = useRouter();
-  const params = useSearchParams();
-  const planId = params.get('planId') || (typeof window !== 'undefined' ? localStorage.getItem('pendingPlanId') : null);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [preference, setPreference] = useState<'PLAN_ONLY' | 'PLAN_CONTENT' | 'PLAN_CONTENT_EXAMS'>('PLAN_ONLY');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -35,9 +32,8 @@ function SignupForm() {
         email,
         password,
         name: name || undefined,
-        planId: planId || undefined,
-        preference,
-        role: 'STUDENT',
+        role: 'TEACHER',
+        preference: 'PLAN_ONLY', // Default for teachers
       });
 
       // Sign in immediately after registration
@@ -46,7 +42,6 @@ function SignupForm() {
       if (result?.error) {
         setError('Account created but sign-in failed. Please go to login.');
       } else {
-        if (typeof window !== 'undefined') localStorage.removeItem('pendingPlanId');
         router.push('/dashboard');
         router.refresh();
       }
@@ -61,9 +56,9 @@ function SignupForm() {
     <div className="min-h-screen flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md animate-fade-up">
         <div className="mb-6">
-          <Link href="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors font-medium">
+          <Link href="/signup" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors font-medium">
             <ArrowLeft className="h-4 w-4" />
-            Back to home
+            Back to student sign up
           </Link>
         </div>
 
@@ -80,27 +75,24 @@ function SignupForm() {
           </Link>
         </div>
 
-        <Card>
+        <Card className="border-glow-subtle bg-card/60 backdrop-blur-md">
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl">Create your account</CardTitle>
+            <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary mb-3">
+              <GraduationCap className="h-5 w-5" />
+            </div>
+            <CardTitle className="text-2xl">Teacher Registration</CardTitle>
             <CardDescription>
-              {planId ? 'Save your study plan and track progress' : 'Start your study journey today'}
+              Create classrooms, set templates, and personalized study rosters
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {planId && (
-              <div className="mb-4 rounded-xl bg-primary/10 border border-primary/20 px-4 py-3 text-sm text-primary">
-                Your study plan is ready to be saved to your account.
-              </div>
-            )}
-
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium" htmlFor="name">Name (optional)</label>
+                <label className="text-sm font-medium" htmlFor="teacher-name">Name (optional)</label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    id="name"
+                    id="teacher-name"
                     placeholder="Your name"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
@@ -110,13 +102,13 @@ function SignupForm() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium" htmlFor="signup-email">Email</label>
+                <label className="text-sm font-medium" htmlFor="teacher-email">School/Work Email</label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    id="signup-email"
+                    id="teacher-email"
                     type="email"
-                    placeholder="you@example.com"
+                    placeholder="teacher@school.edu"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="pl-9"
@@ -126,11 +118,11 @@ function SignupForm() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium" htmlFor="signup-password">Password</label>
+                <label className="text-sm font-medium" htmlFor="teacher-password">Password</label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    id="signup-password"
+                    id="teacher-password"
                     type="password"
                     placeholder="Min. 8 characters"
                     value={password}
@@ -141,58 +133,22 @@ function SignupForm() {
                 </div>
               </div>
 
-              {/* Preference Picker */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Your Study Mode Preference</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {(
-                    [
-                      { value: 'PLAN_ONLY', label: 'Plan Only', desc: 'Schedule focus' },
-                      { value: 'PLAN_CONTENT', label: 'Plan + Content', desc: 'Notes & links' },
-                      { value: 'PLAN_CONTENT_EXAMS', label: 'Full Package', desc: 'Adds quizzes' },
-                    ] as const
-                  ).map((opt) => (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      onClick={() => setPreference(opt.value)}
-                      className={`flex flex-col items-center justify-between text-center p-3 rounded-xl border text-xs transition-all duration-200 ${
-                        preference === opt.value
-                          ? 'border-primary bg-primary/5 text-primary ring-1 ring-primary'
-                          : 'border-border bg-secondary/20 hover:bg-secondary/40 text-muted-foreground'
-                      }`}
-                    >
-                      <span className="font-semibold block mb-1">{opt.label}</span>
-                      <span className="text-[10px] opacity-80 block leading-tight">{opt.desc}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
               {error && (
                 <div className="rounded-xl bg-destructive/10 border border-destructive/20 px-4 py-3 text-sm text-destructive">
                   {error}
                 </div>
               )}
 
-              <Button type="submit" className="w-full" size="lg" loading={loading} id="signup-submit">
-                Create account
+              <Button type="submit" className="w-full" size="lg" loading={loading} id="teacher-signup-submit">
+                Create Teacher Account
               </Button>
             </form>
 
-            <div className="mt-6 text-center text-sm text-muted-foreground space-y-2">
-              <div>
-                Already have an account?{' '}
-                <Link href={planId ? `/login?planId=${planId}` : '/login'} className="text-primary hover:underline font-medium">
-                  Sign in
-                </Link>
-              </div>
-              <div className="text-xs pt-2 border-t border-border/40">
-                Are you a teacher?{' '}
-                <Link href="/signup/teacher" className="text-primary hover:underline font-medium">
-                  Sign up as a teacher
-                </Link>
-              </div>
+            <div className="mt-6 text-center text-sm text-muted-foreground">
+              Already have an account?{' '}
+              <Link href="/login" className="text-primary hover:underline font-medium">
+                Sign in
+              </Link>
             </div>
           </CardContent>
         </Card>
@@ -201,10 +157,10 @@ function SignupForm() {
   );
 }
 
-export default function SignupPage() {
+export default function TeacherSignupPage() {
   return (
     <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" /></div>}>
-      <SignupForm />
+      <TeacherSignupForm />
     </Suspense>
   );
 }

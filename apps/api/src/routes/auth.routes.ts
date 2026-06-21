@@ -198,6 +198,12 @@ router.patch('/role', authMiddleware, async (req: Request, res: Response, next: 
     const { role } = parsed.data;
     const userId = req.user!.userId;
 
+    const existingUser = await prisma.user.findUnique({ where: { id: userId } });
+    if (existingUser?.role === 'STUDENT') {
+      res.status(403).json({ success: false, error: 'Students are not allowed to change their user role' });
+      return;
+    }
+
     const updatedUser = await prisma.user.update({
       where: { id: userId },
       data: { role },

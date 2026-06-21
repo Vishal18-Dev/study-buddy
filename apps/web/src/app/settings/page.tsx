@@ -137,32 +137,34 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            <div className="space-y-2 pb-2">
-              <label className="text-sm font-medium block">Account Role</label>
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  variant={role === 'STUDENT' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => handleUpdateRole('STUDENT')}
-                  disabled={loadingRole}
-                >
-                  Student
-                </Button>
-                <Button
-                  type="button"
-                  variant={role === 'TEACHER' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => handleUpdateRole('TEACHER')}
-                  disabled={loadingRole}
-                >
-                  Teacher / Tutor
-                </Button>
+            {role === 'TEACHER' && (
+              <div className="space-y-2 pb-2">
+                <label className="text-sm font-medium block">Account Role</label>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant={(role as string) === 'STUDENT' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => handleUpdateRole('STUDENT')}
+                    disabled={loadingRole}
+                  >
+                    Student
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={(role as string) === 'TEACHER' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => handleUpdateRole('TEACHER')}
+                    disabled={loadingRole}
+                  >
+                    Teacher / Tutor
+                  </Button>
+                </div>
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  Note: Changing role updates navigation menus and dashboard access immediately.
+                </p>
               </div>
-              <p className="text-[10px] text-muted-foreground mt-1">
-                Note: Changing role updates navigation menus and dashboard access immediately.
-              </p>
-            </div>
+            )}
 
             <Button onClick={handleSave} loading={loading} id="save-settings">
               <Save className="h-4 w-4" />
