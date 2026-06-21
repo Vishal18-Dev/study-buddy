@@ -57,7 +57,20 @@ const allowedOrigins = process.env.CORS_ORIGINS
     ];
 
 app.use(cors({
-  origin: allowedOrigins,
+  origin: (origin, callback) => {
+    if (!origin) {
+      callback(null, true);
+      return;
+    }
+    const isAllowed = allowedOrigins.some((allowed) => allowed === origin || allowed === '*');
+    const isVercel = origin.endsWith('.vercel.app') || origin.includes('vercel.app');
+    
+    if (isAllowed || isVercel) {
+      callback(null, true);
+    } else {
+      callback(null, false);
+    }
+  },
   credentials: true,
 }));
 
