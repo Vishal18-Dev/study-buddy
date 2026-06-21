@@ -90,12 +90,10 @@ router.get('/joined', authMiddleware, async (req: Request, res: Response, next: 
 // ── POST /api/classrooms ─────────────────────────
 router.post('/', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    if (req.user?.role !== 'TEACHER') {
-      const user = await prisma.user.findUnique({ where: { id: req.user!.userId } });
-      if (user?.role !== 'TEACHER') {
-        res.status(403).json({ success: false, error: 'Only teachers can create classrooms' });
-        return;
-      }
+    const user = await prisma.user.findUnique({ where: { id: req.user!.userId } });
+    if (user?.role !== 'TEACHER') {
+      res.status(403).json({ success: false, error: 'Only teachers can create classrooms' });
+      return;
     }
 
     const parsed = createClassroomSchema.safeParse(req.body);
