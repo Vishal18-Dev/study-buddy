@@ -38,6 +38,9 @@ export interface PlanSummary {
   dailyHours: number;
   status: 'ACTIVE' | 'PAUSED' | 'COMPLETE' | 'ABANDONED';
   coveragePercent: number;
+  isTeacherAssigned?: boolean;
+  teacherPlanAccepted?: boolean;
+  teacherNotes?: string | null;
   createdAt: string;
   updatedAt: string;
 }

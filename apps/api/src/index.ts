@@ -21,6 +21,7 @@ import dashboardRoutes from './routes/dashboard.routes';
 import chatRoutes from './routes/chat.routes';
 import knowledgeRoutes from './routes/knowledge.routes';
 import recommendationsRoutes from './routes/recommendations.routes';
+import classroomRoutes from './routes/classroom.routes';
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -84,6 +85,7 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/knowledge', knowledgeRoutes);
 app.use('/api/recommendations', recommendationsRoutes);
+app.use('/api/classrooms', classroomRoutes);
 
 // ── 404 handler ────────────────────────────────
 app.use((_req, res) => {

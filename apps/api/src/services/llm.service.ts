@@ -107,7 +107,11 @@ function generateLocalMockPlan(params: CreatePlanBody & { syllabusContext?: stri
 }
 
 export async function generateStudyPlan(
-  params: CreatePlanBody & { syllabusContext?: string }
+  params: CreatePlanBody & {
+    syllabusContext?: string;
+    currentScore?: number;
+    teacherNotes?: string;
+  }
 ): Promise<LLMPlan> {
   const geminiApiKey = process.env.GEMINI_API_KEY || '';
   const openaiApiKey = process.env.OPENAI_API_KEY || '';
@@ -144,6 +148,8 @@ Student details:
 - Current level: ${params.knowledgeLevel}
 - Score goal: ${params.goalScore}%
 - Syllabus context: ${params.syllabusContext || 'Not provided — use standard topics for this subject'}
+${params.currentScore !== undefined && params.currentScore !== null ? `- Student's current baseline exam score: ${params.currentScore}%` : ''}
+${params.teacherNotes ? `- Special teacher feedback/instructions: ${params.teacherNotes}` : ''}
 
 Rules:
 - Be realistic. Do not overload days.
@@ -152,6 +158,9 @@ Rules:
 - Each topic should be 30–90 mins max.
 - If no syllabus is provided, use standard topics for the subject.
 - Calculate the number of days from today until the exam date and create exactly that many day entries.
+${params.currentScore !== undefined && params.currentScore !== null && params.currentScore < 50 ? `- IMPORTANT: Since the student has a low baseline score (${params.currentScore}%), focus heavily on foundational concepts, add extra review days, and go at a slower, more thorough pace.` : ''}
+${params.currentScore !== undefined && params.currentScore !== null && params.currentScore >= 80 ? `- IMPORTANT: Since the student is already a top performer (${params.currentScore}%), skip/minimize introductory topics and focus on advanced concepts, challenging exercises, mock exams, and revision.` : ''}
+${params.teacherNotes ? `- IMPORTANT: Incorporate the teacher's instructions: "${params.teacherNotes}".` : ''}
 - Respond with ONLY the JSON object. No other text.`;
 
   try {
@@ -751,6 +760,108 @@ Respond with this EXACT structure:
   } catch (err) {
     console.error('❌ [LLM] YouTube video search with Gemini failed. Calling fallback scraper...', err);
     return scrapeYoutubeFallback(topicTitle, subject);
+  }
+}
+
+export interface OnboardingChatResult {
+  reply: string;
+  extracted: {
+    subject: string | null;
+    examDate: string | null;
+    dailyHours: number | null;
+    goalScore: number | null;
+    knowledgeLevel: 'BEGINNER' | 'SOME_KNOWLEDGE' | 'REVISION' | null;
+    syllabusContext: string | null;
+  };
+  readyToGenerate: boolean;
+}
+
+export async function generateOnboardingChatResponse(
+  chatHistory: { role: 'user' | 'model'; content: string }[],
+  message: string
+): Promise<OnboardingChatResult> {
+  const geminiApiKey = process.env.GEMINI_API_KEY || '';
+  const openaiApiKey = process.env.OPENAI_API_KEY || '';
+
+  const fallback: OnboardingChatResult = {
+    reply: "Could you tell me what subject you are preparing for, when your exam is, and how many hours you can study daily?",
+    extracted: {
+      subject: null,
+      examDate: null,
+      dailyHours: null,
+      goalScore: null,
+      knowledgeLevel: null,
+      syllabusContext: null,
+    },
+    readyToGenerate: false,
+  };
+
+  if (
+    (!geminiApiKey || geminiApiKey === 'your-gemini-api-key-here') &&
+    (!openaiApiKey || openaiApiKey === 'your-openai-api-key-here')
+  ) {
+    // Quick mock response for testing if keys are missing
+    const hasMath = message.toLowerCase().includes('math');
+    return {
+      reply: `[Mock AI] That sounds cool! Let's get that study plan built. I heard you say: "${message}". What subject are we preparing for?`,
+      extracted: {
+        subject: hasMath ? 'Mathematics' : 'Science',
+        examDate: new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0],
+        dailyHours: 2,
+        goalScore: 80,
+        knowledgeLevel: 'BEGINNER',
+        syllabusContext: null,
+      },
+      readyToGenerate: hasMath || message.toLowerCase().includes('science') || message.toLowerCase().includes('ready'),
+    };
+  }
+
+  const formattedHistory = chatHistory
+    .map((m) => `${m.role.toUpperCase()}: ${m.content}`)
+    .join('\n');
+
+  const prompt = `You are Unslump, a friendly, casual, and supportive AI study coach helping a student set up their study plan.
+Your goal is to converse naturally with the student and extract the following parameters:
+1. "subject": the subject or exam name (e.g. "Math", "SAT", "Biology")
+2. "examDate": the date of their exam in YYYY-MM-DD format (if they say "in 2 weeks" or "next month", compute the actual date relative to today's date: ${new Date().toISOString().split('T')[0]})
+3. "dailyHours": how many hours they can study daily (must be a number between 0.5 and 16)
+4. "goalScore": their target score percentage (must be a number between 1 and 100, default to 60 if they say "just pass")
+5. "knowledgeLevel": their current familiarity with the subject. MUST map to one of: "BEGINNER", "SOME_KNOWLEDGE", or "REVISION"
+6. "syllabusContext": any specific chapters, topics, or notes they mention
+
+Tone & Banter Guidelines:
+- The target users are often teenagers. Speak in a casual, encouraging, and clear manner. Avoid overly formal or dry language.
+- If they try to break you, give joke answers, or talk about random things, banter back playfully but always nudge them back to setting up their study plan.
+- NEVER use emojis in your response. Keep responses under 3 sentences.
+
+Current Conversation History:
+${formattedHistory}
+
+Latest Student Message:
+${message}
+
+You MUST respond in valid JSON only. No explanation, no markdown code blocks.
+Response structure:
+{
+  "reply": "Your friendly, emoji-free response to the student.",
+  "extracted": {
+    "subject": "string or null",
+    "examDate": "YYYY-MM-DD string or null",
+    "dailyHours": number or null,
+    "goalScore": number or null,
+    "knowledgeLevel": "BEGINNER | SOME_KNOWLEDGE | REVISION or null",
+    "syllabusContext": "string or null"
+  },
+  "readyToGenerate": true/false (set to true only when subject, examDate, dailyHours, goalScore, and knowledgeLevel have all been extracted successfully)
+}`;
+
+  try {
+    const raw = await generateTextWithFallback(prompt, { json: true });
+    const jsonStr = extractJson(raw);
+    return JSON.parse(jsonStr) as OnboardingChatResult;
+  } catch (err) {
+    console.error('❌ [LLM] Onboarding chat generation failed:', err);
+    return fallback;
   }
 }
 

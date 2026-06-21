@@ -14,11 +14,16 @@ const registerSchema = z.object({
   name: z.string().nullable().optional(),
   planId: z.string().nullable().optional(), // pre-generated plan to associate
   preference: z.enum(['PLAN_ONLY', 'PLAN_CONTENT', 'PLAN_CONTENT_EXAMS']).optional(),
+  role: z.enum(['STUDENT', 'TEACHER']).optional(),
 });
 
 const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(1, 'Password is required'),
+});
+
+const updateRoleSchema = z.object({
+  role: z.enum(['STUDENT', 'TEACHER']),
 });
 
 // ── POST /api/auth/register ────────────────────
@@ -30,7 +35,7 @@ router.post('/register', async (req: Request, res: Response, next: NextFunction)
       return;
     }
 
-    const { email, password, name, planId, preference } = parsed.data;
+    const { email, password, name, planId, preference, role } = parsed.data;
 
     // Check if user already exists
     const existing = await prisma.user.findUnique({ where: { email } });
@@ -42,7 +47,13 @@ router.post('/register', async (req: Request, res: Response, next: NextFunction)
     const passwordHash = await bcrypt.hash(password, 12);
 
     const user = await prisma.user.create({
-      data: { email, passwordHash, name, preference: preference || 'PLAN_ONLY' },
+      data: {
+        email,
+        passwordHash,
+        name,
+        preference: preference || 'PLAN_ONLY',
+        role: role || 'STUDENT',
+      },
     });
 
     // Create initial streak record
@@ -88,7 +99,14 @@ router.post('/register', async (req: Request, res: Response, next: NextFunction)
       success: true,
       data: {
         token,
-        user: { id: user.id, email: user.email, name: user.name, tier: user.tier, preference: user.preference },
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          tier: user.tier,
+          preference: user.preference,
+          role: user.role,
+        },
       },
     });
   } catch (err) {
@@ -125,7 +143,14 @@ router.post('/login', async (req: Request, res: Response, next: NextFunction) =>
       success: true,
       data: {
         token,
-        user: { id: user.id, email: user.email, name: user.name, tier: user.tier, preference: user.preference },
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          tier: user.tier,
+          preference: user.preference,
+          role: user.role,
+        },
       },
     });
   } catch (err) {
@@ -138,7 +163,16 @@ router.get('/me', authMiddleware, async (req: Request, res: Response, next: Next
   try {
     const user = await prisma.user.findUnique({
       where: { id: req.user!.userId },
-      select: { id: true, email: true, name: true, tier: true, preference: true, telegramId: true, createdAt: true },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        tier: true,
+        preference: true,
+        telegramId: true,
+        role: true,
+        createdAt: true,
+      },
     });
 
     if (!user) {
@@ -147,6 +181,30 @@ router.get('/me', authMiddleware, async (req: Request, res: Response, next: Next
     }
 
     res.json({ success: true, data: user });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ── PATCH /api/auth/role ───────────────────────
+router.patch('/role', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const parsed = updateRoleSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ success: false, error: parsed.error.errors[0].message });
+      return;
+    }
+
+    const { role } = parsed.data;
+    const userId = req.user!.userId;
+
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: { role },
+      select: { id: true, email: true, name: true, role: true },
+    });
+
+    res.json({ success: true, data: updatedUser, message: `Role updated to ${role}` });
   } catch (err) {
     next(err);
   }

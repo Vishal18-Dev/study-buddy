@@ -150,15 +150,24 @@ export function NavBar() {
 
   if (!session) return null;
 
-  const navItems = [
-    { href: '/dashboard',    icon: LayoutDashboard, label: 'Dashboard'      },
-    { href: '/plan',         icon: Calendar,        label: 'Study Plan'     },
-    { href: '/plans',        icon: BookMarked,      label: 'My Plans'       },
-    { href: '/chat',         icon: MessageSquare,   label: 'AI Assistant'   },
-    { href: '/knowledge',    icon: Library,         label: 'Knowledge Base' },
-    { href: '/progress',     icon: BarChart3,       label: 'Progress'       },
-    { href: '/settings',     icon: Settings,        label: 'Settings'       },
-  ];
+  const isTeacher = session.role === 'TEACHER';
+
+  const navItems = isTeacher
+    ? [
+        { href: '/dashboard',    icon: LayoutDashboard, label: 'Dashboard'      },
+        { href: '/classrooms',   icon: Library,         label: 'Classrooms'     },
+        { href: '/settings',     icon: Settings,        label: 'Settings'       },
+      ]
+    : [
+        { href: '/dashboard',    icon: LayoutDashboard, label: 'Dashboard'      },
+        { href: '/plan',         icon: Calendar,        label: 'Study Plan'     },
+        { href: '/plans',        icon: BookMarked,      label: 'My Plans'       },
+        { href: '/classrooms',   icon: Library,         label: 'Classrooms'     },
+        { href: '/chat',         icon: MessageSquare,   label: 'AI Assistant'   },
+        { href: '/knowledge',    icon: Library,         label: 'Knowledge Base' },
+        { href: '/progress',     icon: BarChart3,       label: 'Progress'       },
+        { href: '/settings',     icon: Settings,        label: 'Settings'       },
+      ];
 
   const isActive = (href: string) =>
     pathname === href || (href !== '/dashboard' && pathname.startsWith(href));
@@ -177,7 +186,7 @@ export function NavBar() {
           />
           <span className="font-bold text-foreground animate-slide-in">Unslump</span>
         </div>
-        {activePlan && (
+        {activePlan && !isTeacher && (
           <Link
             href="/plans"
             className="text-[10px] font-semibold text-primary bg-primary/10 px-2.5 py-1 rounded-full max-w-[140px] truncate"
@@ -205,7 +214,7 @@ export function NavBar() {
         </div>
 
         {/* Plan Switcher */}
-        <PlanSwitcher />
+        {!isTeacher && <PlanSwitcher />}
 
         <nav className="flex-1 flex flex-col gap-0.5">
           {navItems.map(({ href, icon: Icon, label }) => (
@@ -229,7 +238,7 @@ export function NavBar() {
         <div className="mt-auto pt-4 border-t border-border">
           <div className="mb-2 px-3 py-2 rounded-lg bg-secondary">
             <p className="text-xs font-semibold text-foreground truncate">
-              {session.user?.name || 'Student'}
+              {session.user?.name || (isTeacher ? 'Teacher' : 'Student')}
             </p>
             <p className="text-[11px] text-muted-foreground truncate">
               {session.user?.email}

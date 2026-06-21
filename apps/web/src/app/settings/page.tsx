@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { get } from '@/lib/fetcher';
+import { get, patch } from '@/lib/fetcher';
 import { useToast } from '@/components/ui/toast-provider';
 
 interface UserData {
@@ -17,6 +17,7 @@ interface UserData {
   name: string | null;
   tier: string;
   telegramId: string | null;
+  role?: string;
 }
 
 export default function SettingsPage() {
@@ -26,7 +27,9 @@ export default function SettingsPage() {
   const [userData, setUserData] = useState<UserData | null>(null);
   const [name, setName] = useState('');
   const [telegramId, setTelegramId] = useState('');
+  const [role, setRole] = useState('STUDENT');
   const [loading, setLoading] = useState(false);
+  const [loadingRole, setLoadingRole] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -41,17 +44,34 @@ export default function SettingsPage() {
         setUserData(u);
         setName(u.name || '');
         setTelegramId(u.telegramId || '');
+        setRole(u.role || 'STUDENT');
       })
       .catch(() => {});
   }, [session?.accessToken]);
 
   const handleSave = async () => {
-    // MVP: just show success toast (full PATCH /api/users/me route can be added post-MVP)
     setLoading(true);
     setTimeout(() => {
       setLoading(false);
       addToast('Settings saved', 'success');
     }, 800);
+  };
+
+  const handleUpdateRole = async (newRole: 'STUDENT' | 'TEACHER') => {
+    if (!session?.accessToken) return;
+    setLoadingRole(true);
+    try {
+      await patch('/api/auth/role', { role: newRole }, session.accessToken);
+      setRole(newRole);
+      addToast(`Account switched to ${newRole === 'TEACHER' ? 'Teacher' : 'Student'}!`, 'success');
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
+    } catch {
+      addToast('Failed to switch roles', 'error');
+    } finally {
+      setLoadingRole(false);
+    }
   };
 
   const tierLabels: Record<string, string> = {
@@ -115,6 +135,33 @@ export default function SettingsPage() {
                   className="pl-9"
                 />
               </div>
+            </div>
+
+            <div className="space-y-2 pb-2">
+              <label className="text-sm font-medium block">Account Role</label>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant={role === 'STUDENT' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => handleUpdateRole('STUDENT')}
+                  disabled={loadingRole}
+                >
+                  Student
+                </Button>
+                <Button
+                  type="button"
+                  variant={role === 'TEACHER' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => handleUpdateRole('TEACHER')}
+                  disabled={loadingRole}
+                >
+                  Teacher / Tutor
+                </Button>
+              </div>
+              <p className="text-[10px] text-muted-foreground mt-1">
+                Note: Changing role updates navigation menus and dashboard access immediately.
+              </p>
             </div>
 
             <Button onClick={handleSave} loading={loading} id="save-settings">

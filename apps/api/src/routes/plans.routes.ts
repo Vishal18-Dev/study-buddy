@@ -8,6 +8,7 @@ import { replanFromNow } from '../services/replan.service';
 import { verifyToken } from '../lib/jwt';
 
 const router = Router();
+import { generateOnboardingChatResponse } from '../services/llm.service';
 
 const createPlanSchema = z.object({
   subject: z.string().min(2, 'Subject is required'),
@@ -16,6 +17,39 @@ const createPlanSchema = z.object({
   goalScore: z.number().min(1).max(100),
   knowledgeLevel: z.enum(['BEGINNER', 'SOME_KNOWLEDGE', 'REVISION']),
   syllabusContext: z.string().optional(),
+  templateId: z.string().optional(),
+  classroomId: z.string().optional(),
+  isTeacherAssigned: z.boolean().optional(),
+  currentScore: z.number().optional(),
+  teacherNotes: z.string().optional(),
+});
+
+const onboardChatSchema = z.object({
+  message: z.string().min(1, 'Message is required'),
+  history: z.array(
+    z.object({
+      role: z.enum(['user', 'model']),
+      content: z.string()
+    })
+  ).default([]),
+});
+
+// POST /api/plans/onboard-chat
+router.post('/onboard-chat', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const parsed = onboardChatSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ success: false, error: parsed.error.errors[0].message });
+      return;
+    }
+
+    const { message, history } = parsed.data;
+    const chatResult = await generateOnboardingChatResponse(history, message);
+
+    res.json({ success: true, data: chatResult });
+  } catch (err) {
+    next(err);
+  }
 });
 
 // POST /api/plans/create
@@ -27,7 +61,19 @@ router.post('/create', async (req: Request, res: Response, next: NextFunction) =
       return;
     }
 
-    const { subject, examDate, dailyHours, goalScore, knowledgeLevel, syllabusContext } = parsed.data;
+    const {
+      subject,
+      examDate,
+      dailyHours,
+      goalScore,
+      knowledgeLevel,
+      syllabusContext,
+      templateId,
+      classroomId,
+      isTeacherAssigned,
+      currentScore,
+      teacherNotes,
+    } = parsed.data;
     
     let userId: string | null = null;
     const authHeader = req.headers.authorization;
@@ -52,11 +98,13 @@ router.post('/create', async (req: Request, res: Response, next: NextFunction) =
       userId = guest.id;
     }
 
-    // Pause any existing active plans (preserve progress)
-    await prisma.plan.updateMany({
-      where: { userId, status: 'ACTIVE' },
-      data: { status: 'PAUSED' },
-    });
+    // Pause any existing active plans (preserve progress) unless it's teacher-assigned
+    if (!isTeacherAssigned) {
+      await prisma.plan.updateMany({
+        where: { userId, status: 'ACTIVE' },
+        data: { status: 'PAUSED' },
+      });
+    }
 
     // Generate plan via LLM
     const llmPlan = await generateStudyPlan({
@@ -66,7 +114,9 @@ router.post('/create', async (req: Request, res: Response, next: NextFunction) =
       goalScore,
       knowledgeLevel,
       syllabusContext,
-    });
+      currentScore,
+      teacherNotes,
+    } as any);
 
     // Store plan in DB
     const plan = await prisma.plan.create({
@@ -76,7 +126,13 @@ router.post('/create', async (req: Request, res: Response, next: NextFunction) =
         examDate: new Date(examDate),
         goalScore,
         dailyHours,
-        status: 'ACTIVE',
+        status: isTeacherAssigned ? 'PAUSED' : 'ACTIVE',
+        isTeacherAssigned: !!isTeacherAssigned,
+        teacherPlanAccepted: !isTeacherAssigned,
+        currentScore,
+        teacherNotes,
+        templateId,
+        classroomId,
         days: {
           create: llmPlan.days.map((day) => ({
             dayNumber: day.dayNumber,
@@ -99,6 +155,42 @@ router.post('/create', async (req: Request, res: Response, next: NextFunction) =
     });
 
     res.status(201).json({ success: true, data: { plan, summary: llmPlan.summary } });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PATCH /api/plans/:planId/accept-assignment
+router.patch('/:planId/accept-assignment', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.user!.userId;
+    const planId = req.params.planId;
+
+    const plan = await prisma.plan.findFirst({
+      where: { id: planId, userId, isTeacherAssigned: true },
+    });
+
+    if (!plan) {
+      res.status(404).json({ success: false, error: 'Teacher assigned plan not found' });
+      return;
+    }
+
+    // Pause all other active plans
+    await prisma.plan.updateMany({
+      where: { userId, status: 'ACTIVE' },
+      data: { status: 'PAUSED' },
+    });
+
+    // Accept and activate this plan
+    const updatedPlan = await prisma.plan.update({
+      where: { id: planId },
+      data: {
+        teacherPlanAccepted: true,
+        status: 'ACTIVE',
+      },
+    });
+
+    res.json({ success: true, data: updatedPlan, message: 'Plan accepted and activated!' });
   } catch (err) {
     next(err);
   }
@@ -134,6 +226,9 @@ router.get('/', authMiddleware, async (req: Request, res: Response, next: NextFu
         dailyHours: plan.dailyHours,
         status: plan.status,
         coveragePercent,
+        isTeacherAssigned: plan.isTeacherAssigned,
+        teacherPlanAccepted: plan.teacherPlanAccepted,
+        teacherNotes: plan.teacherNotes,
         createdAt: plan.createdAt,
         updatedAt: plan.updatedAt,
       };

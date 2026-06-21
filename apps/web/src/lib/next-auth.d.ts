@@ -5,5 +5,6 @@ declare module 'next-auth' {
     accessToken?: string;
     userId?: string;
     preference?: string;
+    role?: string;
   }
 }

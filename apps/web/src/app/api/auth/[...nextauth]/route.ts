@@ -40,12 +40,14 @@ const authOptions: NextAuthOptions = {
             name: user.name,
             accessToken: token,
             preference: user.preference,
+            role: user.role,
           } as {
             id: string;
             email: string;
             name: string | null;
             accessToken: string;
             preference: string;
+            role: string;
           };
         } catch {
           return null;
@@ -59,6 +61,7 @@ const authOptions: NextAuthOptions = {
         token.accessToken = (user as { accessToken?: string }).accessToken;
         token.userId = user.id;
         token.preference = (user as { preference?: string }).preference;
+        token.role = (user as { role?: string }).role;
       }
       return token;
     },
@@ -66,6 +69,7 @@ const authOptions: NextAuthOptions = {
       session.accessToken = token.accessToken as string;
       session.userId = token.userId as string;
       session.preference = token.preference as string;
+      session.role = token.role as string;
       return session;
     },
   },

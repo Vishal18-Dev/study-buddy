@@ -15,27 +15,38 @@ model User {
   tier             String            @default("FREE")
   preference       String            @default("PLAN_ONLY")
   telegramId       String?
+  role             String            @default("STUDENT") // "STUDENT" or "TEACHER"
   createdAt        DateTime          @default(now())
   checkIns         CheckIn[]
   knowledgeSources KnowledgeSource[]
   plans            Plan[]
   quizResults      QuizResult[]
   streaks          Streak?
+  classroomsTaught Classroom[]       @relation("TeacherClassrooms")
+  classroomMembers ClassroomMember[]
 }
 
 model Plan {
-  id               String            @id @default(cuid())
-  userId           String
-  subject          String
-  examDate         DateTime
-  goalScore        Int
-  dailyHours       Float
-  status           String            @default("ACTIVE")
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
-  knowledgeSources KnowledgeSource[]
-  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  days             PlanDay[]
+  id                  String            @id @default(cuid())
+  userId              String
+  subject             String
+  examDate            DateTime
+  goalScore           Int
+  dailyHours          Float
+  status              String            @default("ACTIVE")
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  isTeacherAssigned   Boolean           @default(false)
+  teacherPlanAccepted Boolean           @default(false)
+  currentScore        Int?
+  teacherNotes        String?
+  templateId          String?
+  classroomId         String?
+  knowledgeSources    KnowledgeSource[]
+  user                User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  template            PlanTemplate?     @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  classroom           Classroom?        @relation(fields: [classroomId], references: [id], onDelete: SetNull)
+  days                PlanDay[]
 }
 
 model PlanDay {
@@ -125,4 +136,37 @@ model TopicRecommendation {
   platform String
   rating   Int     @default(0)
   topic    Topic   @relation(fields: [topicId], references: [id], onDelete: Cascade)
+}
+
+model Classroom {
+  id        String            @id @default(cuid())
+  name      String
+  code      String            @unique // 6-character uppercase alphanumeric code
+  teacherId String
+  createdAt DateTime          @default(now())
+  teacher   User              @relation("TeacherClassrooms", fields: [teacherId], references: [id], onDelete: Cascade)
+  members   ClassroomMember[]
+  templates PlanTemplate[]
+  plans     Plan[]
+}
+
+model ClassroomMember {
+  id          String    @id @default(cuid())
+  classroomId String
+  studentId   String
+  joinedAt    DateTime  @default(now())
+  classroom   Classroom @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  student     User      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([classroomId, studentId])
+}
+
+model PlanTemplate {
+  id              String    @id @default(cuid())
+  classroomId     String
+  subject         String
+  syllabusContext String    // Syllabus topics or text
+  createdAt       DateTime  @default(now())
+  classroom       Classroom @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  plans           Plan[]
 }
