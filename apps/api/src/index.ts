@@ -1,4 +1,5 @@
 import 'dotenv/config';
+console.log("[SERVER STARTUP] Active NODE_ENV:", process.env.NODE_ENV);
 import './lib/env'; // Validate env vars immediately
 import express from 'express';
 import cors from 'cors';
@@ -27,20 +28,27 @@ const app = express();
 const PORT = process.env.PORT || 4000;
 
 // ── Rate Limiters ─────────────────────────────
+// E2E test bypass: requests carrying the correct x-e2e-secret header skip rate limiting
+const e2eSecret = process.env.E2E_API_SECRET;
+const e2eSkip = (req: express.Request) =>
+  !!(e2eSecret && req.headers['x-e2e-secret'] === e2eSecret);
+
 const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 200, // Limit each IP to 200 requests per 15 minutes
+  max: process.env.NODE_ENV === 'production' ? 200 : 10000, // Limit each IP to 200 requests per 15 minutes
   message: { success: false, error: 'Too many requests from this IP, please try again later' },
   standardHeaders: true,
   legacyHeaders: false,
+  skip: e2eSkip,
 });
 
 const strictLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 30, // Limit each IP to 30 requests per 15 minutes (auth / plan generation)
+  max: process.env.NODE_ENV === 'test' ? 100000 : (process.env.NODE_ENV === 'production' ? 30 : 10000),
   message: { success: false, error: 'Too many requests. Please try again after 15 minutes' },
   standardHeaders: true,
   legacyHeaders: false,
+  skip: e2eSkip,
 });
 
 // ── Security Middleware ─────────────────────────
